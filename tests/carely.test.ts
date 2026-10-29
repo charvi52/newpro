@@ -1,21 +1,56 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import jsQR from 'jsqr';
-import {PNG} from 'pngjs';
-import {sample1,sample2,initial,fields,key,add,alerts,matches,preview,parsePayload,restore,resetStorage,STORAGE_KEY,answer,questions,hindiQuestions} from '../lib/carely';
-import official from '../data/official_alerts.json';
-test('official input is explicitly empty with honest coverage',()=>{assert.equal(official.records.length,0);assert.match(official.coverageNote,/does not establish/);const page=fs.readFileSync('app/page.tsx','utf8');assert.match(page,/Official records loaded:.*official.records.length/);assert.match(page,/Official alert checking is unavailable/)});
-for(const [n,expected] of [[1,sample1],[2,sample2]] as const)test(`bundled QR ${n} actually decodes to expected identity`,()=>{const p=PNG.sync.read(fs.readFileSync(`public/samples/sample-${n}.png`));const qr=jsQR(new Uint8ClampedArray(p.data),p.width,p.height);assert.ok(qr);assert.deepEqual(parsePayload(qr.data),expected)});
-test('malformed and unsupported QR payloads are rejected',()=>{for(const raw of ['bad','{}',JSON.stringify({schemaVersion:1,sample:false,medicine:sample1}),JSON.stringify({schemaVersion:1,sample:true,medicine:{...sample1,batch:22}})])assert.throws(()=>parsePayload(raw))});
-test('matching requires every identity field and exact batch characters',()=>{assert.ok(matches(sample1));for(const field of fields)assert.equal(matches({...sample1,[field]:sample1[field]+'x'}),false);assert.equal(matches({...sample1,batch:'DMA-2O48'}),false);assert.equal(matches({...sample1,batch:'DMA2048'}),false);assert.ok(matches({...sample1,product:'  demo   medicine A '}));assert.equal(matches(sample2),false)});
-test('repeat scans and alert derivation are idempotent',()=>{const a=add(add(initial,sample1),sample1);assert.equal(a.length,3);assert.equal(alerts(a).length,1);assert.deepEqual(alerts(a),alerts(a));assert.equal(add(a,sample2).length,4)});
-test('caregiver preview is gated and revocation hides details immediately',()=>{const a=add(initial,sample1);assert.deepEqual(preview(a,false),[]);assert.equal(preview(a,true).length,1);assert.deepEqual(preview(a,false),[]);assert.deepEqual(preview(initial,true),[])});
-test('reset removes only the namespaced key and returns initial state',()=>{const map=new Map([[STORAGE_KEY,'demo'],['unrelated','keep']]);const state=resetStorage({removeItem:k=>map.delete(k)});assert.equal(map.get('unrelated'),'keep');assert.equal(map.has(STORAGE_KEY),false);assert.deepEqual(state,{items:initial,consent:false});assert.equal(official.records.length,0)});
-test('malformed state restores safe defaults; valid state deduplicates',()=>{for(const raw of [null,'invalid','{}','{"items":[null],"consent":true}'])assert.deepEqual(restore(raw),{items:initial,consent:false});assert.equal(restore(JSON.stringify({items:[sample1,sample1],consent:true})).items.length,1)});
-test('assistant handles supported questions and bounded English/Hindi fallback',()=>{assert.match(answer('What medicine should I take?',initial,false),/Choose a question above/);assert.match(answer('दवा बताओ',initial,false,true),/प्रश्न चुनें/);assert.match(answer(questions[1],initial,false),/Official records loaded: 0/);assert.match(answer(hindiQuestions[1],initial,false,true),/आधिकारिक रिकॉर्ड: 0/);assert.match(answer(questions[2],add(initial,sample1),false),/No access granted/);assert.match(answer(questions[2],add(initial,sample1),true),/one simulated/)});
+import {type Medicine,fields,key,add,initial,restore,restoreLegacy,resetStorage,STORAGE_KEY,LEGACY_STORAGE_KEY,validateMedicine,updateMedicine,removeMedicine} from '../lib/carely';
 
-test('personal medicine fields persist without being marked as fictional',()=>{const m={...sample2,origin:'manual' as const,owner:'Mum',expiry:'2028-05',notes:'Keep packaging details handy.'};const s=restore(JSON.stringify({items:[m],consent:false}));assert.equal(s.items[0].origin,'manual');assert.equal(s.items[0].owner,'Mum');assert.equal(s.items[0].expiry,'2028-05');assert.equal(s.items[0].notes,m.notes)});
-test('manual entry validates required identity and note/expiry constraints',async()=>{const {validateMedicine}=await import('../lib/carely');assert.equal(validateMedicine(sample2),'');assert.match(validateMedicine({...sample2,batch:' '}),/Complete/);assert.match(validateMedicine({...sample2,expiry:'2028-18'}),/expiry/);assert.match(validateMedicine({...sample2,notes:'a'.repeat(501)}),/under 500/)});
-test('editing keeps one record and removing one preserves the others',async()=>{const {updateMedicine,removeMedicine}=await import('../lib/carely');const edited={...sample1,batch:'DMA-2050',origin:'manual' as const,owner:'Me'};const a=updateMedicine(add(initial,sample1),key(sample1),edited);assert.equal(a.length,3);assert.equal(alerts(a).length,0);assert.ok(a.some(m=>m.owner==='Me'));const b=removeMedicine(a,key(edited));assert.deepEqual(b,initial);assert.deepEqual(removeMedicine(b,key(edited)),b)});
-test('malformed optional metadata cannot crash the restored cabinet',()=>{for(const change of [{notes:{}},{owner:[]},{expiry:'2028-99'},{origin:'official'}])assert.deepEqual(restore(JSON.stringify({items:[{...sample2,...change}],consent:true})),{items:initial,consent:false})});
+const m:Medicine={product:'Example label name',manufacturer:'Example manufacturer',strength:'Strength from pack',form:'tablet',release:'Unknown',batch:'AB-1234',origin:'manual'};
+
+test('fresh cabinets are empty, with no fictional medicine or batch alerts',()=>{
+ assert.deepEqual(initial,[]);
+ const page=fs.readFileSync('app/page.tsx','utf8');
+ assert.doesNotMatch(page,/DMA-2048|Rohan|sample-1\.png|PREWRITTEN DEMO GUIDE|Fictional sandbox below/);
+ assert.doesNotMatch(fs.readFileSync('components/cloud/services.tsx','utf8'),/api\.fda\.gov|Official US recall/);
+});
+test('medicine fields and duplicate identity are stable',()=>{
+ assert.equal(fields.length,6);
+ assert.equal(key(m),key({...m,product:'  Example   label name  '}));
+ assert.equal(add(add([],m),m).length,1);
+ assert.equal(add([m],{...m,batch:'AB-1235'}).length,2);
+});
+test('empty or invalid personal entries cannot be saved',()=>{
+ assert.equal(validateMedicine(m),'');
+ assert.match(validateMedicine({...m,batch:' '}),/Complete/);
+ assert.match(validateMedicine({...m,expiry:'2028-20'}),/expiry/);
+ assert.match(validateMedicine({...m,notes:'x'.repeat(501)}),/under 500/);
+});
+test('restored entries are only manually saved and de-duplicated',()=>{
+ assert.deepEqual(restore(null),{items:[]});
+ assert.deepEqual(restore('not json'),{items:[]});
+ assert.deepEqual(restore(JSON.stringify({items:[{...m,origin:undefined}]})),{items:[]});
+ assert.deepEqual(restore(JSON.stringify({items:[m,m]})),{items:[m]});
+});
+test('legacy migration discards fictional samples while keeping manual entries',()=>{
+ const old={items:[{...m,origin:undefined},m]};
+ assert.deepEqual(restoreLegacy(JSON.stringify(old)),{items:[m]});
+});
+test('reset clears only Carely storage and not unrelated localStorage keys',()=>{
+ const map=new Map([[STORAGE_KEY,'x'],[LEGACY_STORAGE_KEY,'y'],['other','keep']]);
+ assert.deepEqual(resetStorage({removeItem:k=>map.delete(k)}),{items:[]});
+ assert.equal(map.get('other'),'keep');
+ assert.equal(map.has(STORAGE_KEY),false);
+ assert.equal(map.has(LEGACY_STORAGE_KEY),false);
+});
+test('updating and deleting changes the target medicine only',()=>{
+ const second={...m,batch:'CD-5678'};
+ const edited={...m,product:'Edited label name'};
+ const next=updateMedicine([m,second],key(m),edited);
+ assert.equal(next.length,2);
+ assert.ok(next.some(i=>i.product==='Edited label name'));
+ assert.deepEqual(removeMedicine(next,key(edited)),[second]);
+});
+test('India recall endpoint does not misrepresent US FDA results as Indian coverage',()=>{
+ const recalls=fs.readFileSync('app/api/recalls/route.ts','utf8');
+ assert.match(recalls,/CDSCO/);
+ assert.doesNotMatch(recalls,/api\.fda\.gov/);
+ assert.match(recalls,/status:501/);
+});
