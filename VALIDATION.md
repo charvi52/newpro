@@ -1,24 +1,20 @@
-# Carely redesign validation
+# Carely cleanup — verification notes
 
-## Automated
-- TypeScript no-emit check passed.
-- 14 Node tests passed: official input, both real QR images, invalid payloads, exact six-field matching, deduplication, consent gating, reset scoping, corrupted-state recovery, bounded assistant, personal metadata persistence, validation, edit/remove behavior, and corrupt optional metadata.
+## Implemented in source
 
-## Browser verified
-- Manual record entry saves and displays YOUR ENTRY.
-- Search finds a record by batch.
-- Editing changes the same record without a duplicate.
-- Removal has an explicit confirmation and removes the selected record.
-- Sample 1 blocks the staged letter O batch until corrected to digit 0.
-- The scan result links directly to the simulated alert.
-- Evidence lists all six fields, fixed simulation metadata and actual official count.
-- Consent ON shows the simulated notification; OFF immediately hides medicine details.
-- Core navigation and family controls translate when Hindi is selected.
-- Uploading the bundled SAMPLE QR via the file chooser decodes to the correct review.
-- Repeated saves do not duplicate cabinet entries.
-- Unsupported typed guide questions return a bounded fallback.
-- Reset confirmation restores initial sample entries and clears simulated alert state.
-- A 390px embedded viewport was inspected; content width equals viewport width (no horizontal overflow). Mobile navigation and sample 2 decoding/saving were exercised.
+- Removed the second fictional Rohan family UI, hardcoded assistant, sample medicine / fake batch-alert views, and the globally stacked Connected Services block.
+- Consolidated navigation into one first-party flow: Home, Cabinet, India alerts, Family, AI.
+- India-specific official CDSCO links now replace US FDA lookup. No fake CDSCO data is generated. `/api/recalls` returns explicit HTTP 501 and links to the official portal; no auto-matching is claimed.
+- Private `OPENAI_API_KEY`, public Supabase project settings and optional private barcode key use explicit setup statuses; the browser-local functions do not require them.
+- A new clean local cabinet contains zero fictional medicines. The old fictional sandbox records are discarded on migration, while manually created records may be retained.
+- `NEXT_PUBLIC_*` and secret key documentation has been updated.
 
-## Limits
-Camera hardware/permission paths and audible Hindi voice playback depend on the presentation device and were not verified with real hardware. No recording is supplied. Official alert checking, real notifications, label extraction, authenticated family accounts and cross-device persistence are not implemented. The photo is generated illustrative artwork, not a customer testimonial.
+## Verification run and outstanding work
+
+- TypeScript/TSX files parsed successfully using TypeScript syntax parser; a dependency-installed Next.js typecheck and production build were **not run** in this environment.
+- The tests were revised for the current product behavior, but a dependency-installed test runner was not available here.
+- No live Supabase or OpenAI credentials were supplied, so the two-account, AI, speech and GTIN provider acceptance flows **cannot** be claimed as verified.
+- Actual CDSCO site availability depends on its own uptime, and the official links need rechecking after deployment.
+- Camera behavior must be checked on a real HTTPS browser and mobile device.
+
+This is still a software prototype, not a clinically validated medical service.
