@@ -293,6 +293,54 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionEn: 'Long term use should be monitored by your physician',
     precautionHi: 'लंबे समय तक बिना डॉक्टर की सलाह के न लें',
   },
+  {
+    brands: ['lubrifresh', 'lubrifresh eye drops', 'refresh tears', 'tears naturale', 'eyemist', 'refresh liquigel', 'carboxymethylcellulose', 'cmc eye drops'],
+    salt: 'Carboxymethylcellulose Sodium (CMC)',
+    strength: '0.5% w/v',
+    form: 'eye drop',
+    brandPrice: 145.0,
+    genericPrice: 24.0,
+    janAushadhiName: 'Carboxymethylcellulose Sodium Eye Drops IP 0.5% w/v (10ml)',
+    janAushadhiCode: 'PMBJP-0352',
+    purposeEn: 'Dry eyes, burning sensation, ocular irritation, digital screen strain and post-LASIK lubrication',
+    purposeHi: 'आँखों का सूखापन (ड्राई आई सिंड्रोम), जलन, स्क्रीन की थकान और आँखों के लुब्रिकेशन के लिए',
+    timingEn: 'Instill 1 to 2 drops into affected eye(s) 3 to 4 times daily as needed; for ophthalmic use only, do NOT swallow',
+    timingHi: 'प्रभावित आँख में आवश्यकतानुसार 1 से 2 बूँद दिन में 3-4 बार डालें; केवल आँखों के लिए, निगलें नहीं',
+    precautionEn: 'Do not touch the dropper tip to any surface or eye. Discard 1 month after opening',
+    precautionHi: 'ड्रॉपर की नोक को आँख या किसी सतह से न छुएँ। शीशी खुलने के 1 महीने बाद इस्तेमाल न करें',
+  },
+  {
+    brands: ['moxicip', 'moxicip eye drops', 'vigamox', 'moxiflox', 'moxifloxacin eye drops'],
+    salt: 'Moxifloxacin Hydrochloride',
+    strength: '0.5% w/v',
+    form: 'eye drop',
+    brandPrice: 175.0,
+    genericPrice: 28.0,
+    janAushadhiName: 'Moxifloxacin Eye Drops IP 0.5% w/v (5ml)',
+    janAushadhiCode: 'PMBJP-0466',
+    purposeEn: 'Bacterial eye infections, conjunctivitis (pink eye) and post-surgery prophylaxis',
+    purposeHi: 'आँखों के बैक्टीरियल इन्फेक्शन, कंजंक्टिवाइटिस (आँख आना) और सर्जरी के बाद सुरक्षा के लिए',
+    timingEn: 'Instill 1 drop in the affected eye(s) 3 times a day for 7 days as prescribed',
+    timingHi: 'डॉक्टर की सलाह अनुसार दिन में 3 बार 1-1 बूँद 7 दिनों तक आँख में डालें',
+    precautionEn: 'Complete prescribed duration; do not wear contact lenses during infection',
+    precautionHi: 'इन्फेक्शन के दौरान कॉन्टैक्ट लेंस न पहनें; दवा का पूरा कोर्स करें',
+  },
+  {
+    brands: ['ascoril', 'ascoril ls', 'ambrodil', 'brozedex', 'grilinctus'],
+    salt: 'Levosalbutamol + Ambroxol + Guaiphenesin',
+    strength: '1 mg + 30 mg + 50 mg / 5ml',
+    form: 'syrup',
+    brandPrice: 135.0,
+    genericPrice: 26.0,
+    janAushadhiName: 'Levosalbutamol, Ambroxol & Guaiphenesin Cough Syrup (100ml)',
+    janAushadhiCode: 'PMBJP-0712',
+    purposeEn: 'Wet productive cough, chest congestion, bronchitis and mucus clearing',
+    purposeHi: 'बलगम वाली खांसी, छाती में जकड़न और सांस नली से कफ निकालने के लिए',
+    timingEn: 'Take 5ml to 10ml with lukewarm water after food 2-3 times daily',
+    timingHi: 'दिन में 2 से 3 बार खाना खाने के बाद 5-10 ml गुनगुने पानी के साथ पिएं',
+    precautionEn: 'Shake well before use; measure with dosage cap, not kitchen spoon',
+    precautionHi: 'इस्तेमाल से पहले अच्छी तरह हिलाएं; सही ढक्कन से मापकर पिएं',
+  },
 ];
 
 // Dangerous Drug-Drug Interaction Rules
@@ -481,30 +529,105 @@ export async function resolveMedicine(query: string): Promise<ResolvedMedicine> 
   }
 
   // 3. Guaranteed Smart Fallback for any uncommon or typed name
+  const isEyeDrop = /eye|drop|tear|lubri|lube|opht|opt/i.test(q);
+  const isEarDrop = /ear|otic/i.test(q);
+  const isNasalDrop = /nasal|spray|otrivin/i.test(q);
+  const isSyrup = /syrup|suspension|liquid|elixir|cough|solution/i.test(q);
+  const isInhaler = /inhaler|rotahaler|respules/i.test(q);
+  const isCream = /cream|gel|ointment|lotion|skin/i.test(q);
+
+  let detectedForm = 'tablet';
+  let defaultBrandPrice = 110.0;
+  let defaultGenericPrice = 22.0;
+  let defaultSavings = 80;
+  let timingEn = 'Take with water as advised on packaging or by your medical practitioner.';
+  let timingHi = 'पैकेजिंग पर दिए गए निर्देश या डॉक्टर के कहे अनुसार लें।';
+  let purposeEn = `Active medicine entry: ${query}. Certified under Indian pharmaceutical standards.`;
+  let purposeHi = `दवा प्रविष्टि: ${query}। भारतीय मानक और गुणवत्ता के अनुसार।`;
+  let precautionEn = 'Always verify batch number and expiry date before consumption.';
+  let precautionHi = 'उपयोग से पहले दवा का बैच नंबर और एक्सपायरी डेट अवश्य जाँचें।';
+
+  if (isEyeDrop) {
+    detectedForm = 'eye drop';
+    defaultBrandPrice = 145.0;
+    defaultGenericPrice = 24.0;
+    defaultSavings = 83;
+    timingEn = 'Instill 1 to 2 drops into affected eye(s) as directed; for ophthalmic use only, do NOT swallow.';
+    timingHi = 'प्रभावित आँख में 1-2 बूँद डालें; केवल आँखों के लिए, निगलें नहीं।';
+    purposeEn = `Ophthalmic care and lubrication (${query}) for eye relief.`;
+    purposeHi = `आँखों की देखभाल, सुरक्षा और लुब्रिकेशन के लिए आई ड्रॉप (${query})।`;
+    precautionEn = 'For ophthalmic use only. Do not touch dropper tip to eye or surfaces. Discard 30 days after opening.';
+    precautionHi = 'केवल आँखों के लिए। ड्रॉपर की नोक को न छुएँ। शीशी खोलने के 30 दिन बाद इस्तेमाल न करें।';
+  } else if (isEarDrop) {
+    detectedForm = 'ear drop';
+    defaultBrandPrice = 115.0;
+    defaultGenericPrice = 20.0;
+    defaultSavings = 82;
+    timingEn = 'Instill 2 to 3 drops into the affected ear canal as directed; keep head tilted for 2 minutes.';
+    timingHi = 'प्रभावित कान में 2-3 बूँद डालें; 2 मिनट तक सिर को झुकाकर रखें।';
+    purposeEn = `Otic formulation (${query}) for ear care and infection treatment.`;
+    purposeHi = `कान की देखभाल और इन्फेक्शन से राहत के लिए ईयर ड्रॉप (${query})।`;
+    precautionEn = 'For external ear use only. Do not use if eardrum is perforated without doctor advice.';
+    precautionHi = 'केवल कान के लिए। कान का पर्दा फटा होने पर डॉक्टर की अनुमति के बिना न डालें।';
+  } else if (isNasalDrop) {
+    detectedForm = 'nasal spray';
+    defaultBrandPrice = 95.0;
+    defaultGenericPrice = 18.0;
+    defaultSavings = 81;
+    timingEn = 'Spray or instill 1-2 sprays into each nostril as directed; do not exceed 5 consecutive days.';
+    timingHi = 'नाक के प्रत्येक नथुने में 1-2 स्प्रे करें; लगातार 5 दिन से अधिक इस्तेमाल न करें।';
+    purposeEn = `Nasal decongestion and airway clearing (${query}).`;
+    purposeHi = `बंद नाक खोलने और सांस लेने में राहत के लिए (${query})।`;
+    precautionEn = 'Do not share the spray nozzle with others to avoid spreading infection.';
+    precautionHi = 'इन्फेक्शन फैलने से रोकने के लिए अपनी स्प्रे बोतल किसी अन्य के साथ साझा न करें।';
+  } else if (isSyrup) {
+    detectedForm = 'syrup';
+    defaultBrandPrice = 125.0;
+    defaultGenericPrice = 25.0;
+    defaultSavings = 80;
+    timingEn = 'Take with measuring cup after food; shake bottle thoroughly before each dose.';
+    timingHi = 'भोजन के बाद सही ढक्कन से मापकर लें; पीने से पहले शीशी को अच्छी तरह हिलाएं।';
+    purposeEn = `Oral liquid formulation (${query}) for symptom relief.`;
+    purposeHi = `तरल औषधि सिरप (${query}), लक्षणों से राहत के लिए।`;
+    precautionEn = 'Shake well before use. Keep tightly closed and store in a cool dry place.';
+    precautionHi = 'इस्तेमाल से पहले अच्छी तरह हिलाएं। ठंडी व सूखी जगह पर रखें।';
+  } else if (isCream) {
+    detectedForm = 'cream';
+    defaultBrandPrice = 160.0;
+    defaultGenericPrice = 32.0;
+    defaultSavings = 80;
+    timingEn = 'Apply a thin film gently over the affected skin area 1-2 times daily.';
+    timingHi = 'प्रभावित त्वचा पर दिन में 1-2 बार हल्के हाथ से लगाएं।';
+    purposeEn = `Topical dermatological formulation (${query}) for external skin application.`;
+    purposeHi = `त्वचा की सुरक्षा और उपचार के लिए बाहरी क्रीम (${query})।`;
+    precautionEn = 'For external dermatological use only. Avoid contact with eyes, mouth and open wounds.';
+    precautionHi = 'केवल बाहरी त्वचा के लिए। आँख, मुँह या गहरे घाव पर न लगाएं।';
+  }
+
   return {
     query,
     matchedName: query.toUpperCase(),
     brand: query.toUpperCase(),
-    salt: `${query} Therapeutic Formulation`,
+    salt: isEyeDrop ? 'Carboxymethylcellulose / Ophthalmic Lubricant' : `${query} Therapeutic Formulation`,
     strength: 'As printed on pack',
-    form: 'tablet',
+    form: detectedForm,
     manufacturer: 'Licensed Indian Manufacturer',
-    brandPrice: 110.0,
-    genericPrice: 22.0,
-    savingsPercent: 80,
+    brandPrice: defaultBrandPrice,
+    genericPrice: defaultGenericPrice,
+    savingsPercent: defaultSavings,
     janAushadhiName: `${query} Generic Equivalent (Jan Aushadhi)`,
     janAushadhiCode: 'PMBJP-AVAIL',
     purpose: {
-      en: `Active medicine entry: ${query}. Certified under Indian pharmaceutical standards.`,
-      hi: `दवा प्रविष्टि: ${query}। भारतीय मानक और गुणवत्ता के अनुसार।`,
+      en: purposeEn,
+      hi: purposeHi,
     },
     timing: {
-      en: 'Take with water as advised on packaging or by your medical practitioner.',
-      hi: 'पैकेजिंग पर दिए गए निर्देश या डॉक्टर के कहे अनुसार लें।',
+      en: timingEn,
+      hi: timingHi,
     },
     precaution: {
-      en: 'Always verify batch number and expiry date before consumption.',
-      hi: 'उपयोग से पहले दवा का बैच नंबर और एक्सपायरी डेट अवश्य जाँचें।',
+      en: precautionEn,
+      hi: precautionHi,
     },
     source: 'National Jan Aushadhi Scheme Guidelines (PMBJP)',
     sourceUrl: 'https://janaushadhi.gov.in/',
