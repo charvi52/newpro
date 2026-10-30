@@ -26,13 +26,13 @@ The app's `/api/status` route reports boolean availability only and never emits 
 5. In Family circle, grant a confirmed account by its email, write a message, then refresh the recipient's inbox after they sign in.
 6. Revoke permission and verify the recipient can no longer read new or old messages from the API. Already read content cannot be taken back from a person's memory or an already-open client.
 
-**Cloud save overwrites the previous snapshot.** It does not merge simultaneous edits. Sign-out clears the device cabinet view; saved cloud records remain on the server. Cabinet data is **never** shared by family permissions. Family sharing is in-app only and manual, not proactive regulatory alerting.
+**Apply the current supabase/schema.sql before using cloud saves.** Cloud load merges device and remote records. Save requires conflict review and uses a revision-checked RPC. Device edits after review and simultaneous remote edits stop the save rather than silently overwriting them. Sign-out keeps device-local entries and leaves saved cloud records on the server. Local entries are shared within this browser, not isolated by account. Cabinet data is **never** shared by family permissions. Family sharing is in-app only and manual, not proactive regulatory alerting.
 
 ## 3. AI assistant
 
 Add private `OPENAI_API_KEY` on the server and restart/redeploy. Signed-in visitors can ask general informational questions in English or Hindi. The question alone is sent to OpenAI; no cabinet entries or family messages are sent. Generated audio comes from the speech API, using the text of the visible reply.
 
-Before a public launch add durable per-user usage quotas, rate limits, abuse handling, monitoring and billing alerts. Auth alone is not an effective cost limit. A ChatGPT subscription is **not** an API key.
+The current SQL migration adds durable per-account quotas: 6 combined chat/speech requests per minute, 20 chat requests/day, 10 speech requests/day (UTC). Reservations are atomic, and failed provider calls also count. Without the migration, paid endpoints fail closed. Owner monitoring, signup abuse controls and provider billing alerts still need deployment-specific configuration. A ChatGPT subscription is **not** an API key.
 
 ## 4. India-specific medicine data and official alerts
 
@@ -43,11 +43,13 @@ Carely's India alerts page links to two official sources:
 - [CDSCO public NSQ and spurious-drug portal](https://cdscoonline.gov.in/CDSCO/viewPublicNSQDrug)
 - [CDSCO alerts and notices](https://cdsco.gov.in/opencms/opencms/en/Alerts/)
 
-CDSCO's website lets visitors inspect official records. **Carely does not claim automated CDSCO ingestion, an exhaustive recall database, an auto-match by name/batch, or an India safety verdict**. This would need a licensed/verified structured ingestion pipeline, published update policy, source audit trails and manual review of ambiguous records. The previous United States FDA report lookup was intentionally removed from the Indian product flow. `/api/recalls` now explicitly returns `501` unsupported and official resource URLs. Do not silently fall back to US data.
+Carely now imports the public portal's structured NSQ/spurious report tables and searches the bundled official history, plus live latest-table refreshes. Run `pnpm run alerts:sync` to rebuild the historical snapshot, then rebuild/redeploy. The full update policy and matching rules are in README.md. `/api/recalls?product=...&manufacturer=...&batch=...` returns results, source evidence, reporting periods and coverage metadata. Name-only or batch-only queries are candidates. All three identifiers must agree for a matching-alert label. No US FDA fallback is used.
+
+This is not an exhaustive recall database or a safety verdict. Distribution/ownership history is unavailable. Spurious-investigation remarks must be read with the original evidence. Missing alerts do not establish safety.
 
 ## 5. Barcode coverage
 
-ZXing decodes supported barcodes locally. A GTIN alone cannot reveal arbitrary batch, expiry or genuine status. Some GS1 symbols carry batch (`10`) and expiry (`17`) application identifiers. The app never invents missing label fields. If the optional provider doesn't identify a scanned GTIN, search by name or use manual entry. No label-photo OCR is implemented.
+ZXing decodes supported barcodes locally. A GTIN alone cannot reveal arbitrary batch, expiry or genuine status. Some GS1 symbols carry batch (`10`) and manufacturing date (`11`), expiry (`17`) and serial (`21`) application identifiers. The app never invents missing label fields. If the optional provider doesn't identify a scanned GTIN, search by name or use manual entry. No label-photo OCR is implemented.
 
 ## 6. Render and acceptance checklist
 
@@ -58,3 +60,7 @@ corepack pnpm render:start
 ```
 
 Test on HTTPS: navigation, camera permissions, barcode upload, product search, manual edits, local-storage migration, Supabase two-account RLS, cloud save/load, family revoke, AI availability and billing limits, and CDSCO official outbound links. See `VALIDATION.md` for verification results from this build environment.
+
+## Motion and devices
+
+Three.js loads after the interface becomes interactive. Reduced-motion users get static decoration and no card movement. WebGL failure has a static fallback. Camera scanning prefers the rear camera but still requires actual browser permission and HTTPS/localhost. A decoded barcode is not an authenticity check. QR photo decoding was tested with generated fixtures; real device acceptance is still required.
