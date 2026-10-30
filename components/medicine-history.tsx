@@ -1,9 +1,10 @@
 'use client';
 import {useI18n} from '@/components/language';
 import {useEffect,useRef,useState} from 'react';
-import {AlertTriangle,ArrowUpRight,FileText,Info,Search,XCircle} from 'lucide-react';
+import {AlertTriangle,ArrowUpRight,FileText,IndianRupee,Info,Search,XCircle} from 'lucide-react';
 import type {AlertQuery} from '@/lib/quality-alerts';
 import {fetchQualityHistory,type HistoryResult as Result} from '@/lib/history-client';
+import {findMedicineAlternative,savings,PMBJP_SOURCE} from '@/lib/offline-medical';
 export default function MedicineHistory({product='',manufacturer='',batch='',onChecked}:AlertQuery&{onChecked?:(query:AlertQuery,summary:{state:string;label:string;checkedAt:string})=>void}){
  const {t,hindi}=useI18n();
  const [catalogue,setCatalogue]=useState<Array<{id:string;name:string;manufacturer:string;form:string;route:string;ingredients:Array<{name:string;strength:string;unit:string}>;source:string;sourceUrl:string}>>([]);
@@ -43,6 +44,34 @@ export default function MedicineHistory({product='',manufacturer='',batch='',onC
    </div>}
    <button className="btn dark" disabled={busy||!Object.values(fields).some(v=>v.trim().length>=2)} type="submit"><Search size={20}/>{t(busy?'Checking official records…':'Check quality history')}</button>
   </form>
+  {(()=>{
+   const alt=findMedicineAlternative(searched.product||fields.product);
+   if(!alt)return null;
+   return <article className="history-evidence generic-alternative-card" style={{marginTop:'1.25rem',borderLeft:'4px solid #059669',background:'var(--bg-elevated, #f0fdf4)'}}>
+    <div className="history-status" style={{background:'#dcfce7',color:'#166534'}}><IndianRupee size={22}/><strong>{hindi?'जन औषधि एवं सस्ती जेनेरिक दवा':'Jan Aushadhi & Cheaper Generic Alternative'}</strong></div>
+    <h4>{alt.generic}</h4>
+    <p style={{marginTop:'4px',fontSize:'1.05rem',color:'#065f46'}}><strong>{hindi?'सक्रिय साल्ट (घटक):':'Active Salt:'}</strong> {alt.salt} · {alt.strength} ({alt.form})</p>
+    <p>{hindi?alt.purpose[1]:alt.purpose[0]}</p>
+    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',gap:'0.75rem',margin:'0.85rem 0'}}>
+     <div style={{padding:'0.75rem',background:'rgba(255,255,255,0.8)',borderRadius:'8px',border:'1px solid #cbd5e1'}}>
+      <span style={{fontSize:'0.8rem',color:'#64748b'}}>{hindi?'बाज़ार में ब्रांडेड कीमत':'Branded market price'}</span>
+      <div style={{fontSize:'1.2rem',fontWeight:700,color:'#334155'}}>₹{alt.brandPrice.toFixed(2)}</div>
+      <small style={{color:'#64748b'}}>~₹{(alt.brandPrice/alt.pack).toFixed(2)} / {alt.form}</small>
+     </div>
+     <div style={{padding:'0.75rem',background:'rgba(255,255,255,0.95)',borderRadius:'8px',border:'1.5px solid #10b981'}}>
+      <span style={{fontSize:'0.8rem',color:'#047857',fontWeight:600}}>{hindi?'सरकारी जन औषधि कीमत':'Jan Aushadhi price'}</span>
+      <div style={{fontSize:'1.25rem',fontWeight:800,color:'#065f46'}}>₹{alt.genericPrice.toFixed(2)}</div>
+      <span style={{display:'inline-block',padding:'2px 8px',background:'#059669',color:'#ffffff',borderRadius:'6px',fontSize:'0.75rem',fontWeight:700,marginTop:'4px'}}>{hindi?'बचत ~':'Save ~'}{savings(alt)}%</span>
+     </div>
+    </div>
+    <dl>
+     <div><dt>{hindi?'कैसे लें':'How to take'}</dt><dd>{hindi?alt.administration[1]:alt.administration[0]}</dd></div>
+     <div><dt>{hindi?'सावधानी':'Precaution'}</dt><dd>{hindi?alt.warning[1]:alt.warning[0]}</dd></div>
+    </dl>
+    <p style={{fontSize:'0.85rem',color:'#047857',fontWeight:600,marginTop:'0.5rem'}}>{hindi?'अपने फार्मासिस्ट से जन औषधि जेनेरिक विकल्प मांगें। देश भर के PMBJP केंद्रों पर उपलब्ध।':'Ask your registered pharmacist for Jan Aushadhi generic substitution. Available at PMBJP Kendras across India.'}</p>
+    <a href={PMBJP_SOURCE} target="_blank" rel="noopener noreferrer">{hindi?'सरकारी जन औषधि सूची देखें ↗':'Government PMBJP formulation list (PIB) ↗'}</a>
+   </article>;
+  })()}
   <p className="history-privacy">{t("Only the submitted search fields are sent to Carely’s server. CDSCO tables are fetched without your medicine query; photos stay on your device.")}{' '}{t("Medicine names are also sent to Drug Information Service for catalogue candidates.")}</p>
   {result&&<div className="history-result" aria-label={t("Search evidence and coverage")}><div className={'history-status '+result.state}><Icon size={24}/><strong>{t(result.label)}</strong></div>
    {result.error&&<p>{t(result.error)}</p>}

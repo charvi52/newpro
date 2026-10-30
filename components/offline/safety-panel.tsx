@@ -2,7 +2,7 @@
 import {useEffect,useState} from 'react';
 import {AlertTriangle,Info,Volume2,Square,Utensils,Shield,IndianRupee} from 'lucide-react';
 import type {Medicine} from '@/lib/carely';
-import {batchStatus,formulationFor,hindiTranscript,loadOfflineSnapshot,localHindiVoice,PMBJP_SOURCE,savings} from '@/lib/offline-medical';
+import {batchStatus,findMedicineAlternative,formulationFor,hindiTranscript,loadOfflineSnapshot,localHindiVoice,PMBJP_SOURCE,savings} from '@/lib/offline-medical';
 import type {AlertSnapshot} from '@/lib/quality-alerts';
 export function HindiAudio({text}:{text:string}){
  const [playing,setPlaying]=useState(false);const [message,setMessage]=useState('');
@@ -19,7 +19,7 @@ export function HindiAudio({text}:{text:string}){
 export default function SafetyPanel({medicine:m,simulation=false,snapshot:provided}:{medicine:Medicine;simulation?:boolean;snapshot?:AlertSnapshot|null}){
  const [snapshot,setSnapshot]=useState<AlertSnapshot|null>(provided||null);const [failed,setFailed]=useState(false);
  useEffect(()=>{let active=true;if(provided){setSnapshot(provided);return;}loadOfflineSnapshot().then(s=>{if(active)setSnapshot(s);}).catch(()=>{if(active)setFailed(true);});return()=>{active=false;};},[provided]);
- const status=snapshot?batchStatus(m,snapshot.records,simulation):null;const f=formulationFor(m);const state=status?.state||'unavailable';const simulated=state==='simulated';
+ const status=snapshot?batchStatus(m,snapshot.records,simulation):null;const f=formulationFor(m)||findMedicineAlternative(m);const state=status?.state||'unavailable';const simulated=state==='simulated';
  const label=simulated?'SIMULATED · MATCHING QUALITY ALERT FOUND':state==='matching-alert'?'MATCHING QUALITY ALERT FOUND':state==='confirmation-needed'?'Details need confirmation':state==='no-match'?'No matching alert found in the checked records':failed?'Alert check unavailable':'Loading bundled official records…';
  return <div className="safety-drawer">
  <article className="safety-card" aria-labelledby="regulatory-title"><h3 id="regulatory-title"><Shield size={24}/>1. Regulatory batch status</h3><div role="status" className={'safety-status '+(simulated?'matching-alert':state)}>{state==='matching-alert'||simulated||state==='confirmation-needed'?<AlertTriangle size={22}/>:<Info size={22}/>}<strong>{label}</strong></div>
