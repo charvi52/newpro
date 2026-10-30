@@ -1,5 +1,7 @@
 import type {Metadata} from 'next';
 import './globals.css';
+import './redesign.css';
+import './sky.css';
 import {ThemeProvider} from '@/components/theme';
 import {themeBootScript} from '@/lib/theme';
 export const metadata:Metadata={
