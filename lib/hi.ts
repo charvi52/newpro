@@ -201,7 +201,7 @@ Checked:|जाँचा गया:
 · Batch:|· बैच:
 Search completed across|खोज पूरी हुई:
 checked official records.|आधिकारिक रिकॉर्ड जाँचे गए।
-No published alert matching this search was found in those records. CDSCO reports do not list every medicine or manufactured batch. This result does not confirm safety or authenticity.|इन रिकॉर्डों में आपकी खोज से मिलता अलर्ट नहीं मिला। CDSCO हर दवा या निर्मित बैच की सूची नहीं देता। यह परिणाम सुरक्षा या असलियत की पुष्टि नहीं है।
+No published alert matching this search was found in those records.|इन रिकॉर्डों में आपकी खोज से मिलता अलर्ट नहीं मिला।
 Possible records are shown below. The supplied details do not establish an exact product, manufacturer and batch match.|संभावित रिपोर्टें नीचे हैं। दी गई जानकारी से उत्पाद, निर्माता और बैच का पूरा मिलान नहीं होता।
 A published quality report matches all three supplied identifiers. Read the evidence below and ask a pharmacist or doctor about treatment.|तीनों जानकारियों से एक प्रकाशित गुणवत्ता रिपोर्ट मिलती है। नीचे प्रमाण पढ़ें और उपचार के लिए फ़ार्मासिस्ट या डॉक्टर से पूछें।
 Searching the official history and checking latest-table availability. A slow or unavailable source will show an explicit error.|आधिकारिक रिपोर्टें खोजी जा रही हैं। स्रोत धीमा या अनुपलब्ध होने पर स्पष्ट संदेश दिखेगा।

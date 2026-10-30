@@ -34,7 +34,7 @@ export default function MedicineHistory({product='',manufacturer='',batch='',onC
     <div className="history-feedback-title">{busy?<Search size={24}/>:<Icon size={24}/>}<strong>{t(busy?'Checking your medicine details…':result?.label||'')}</strong></div>
     {!busy&&result&&<><p>{t("Checked:")}{' '}<strong>{searched.product||t('Name not supplied')}</strong>{' '}{t("· Manufacturer:")}{' '}{searched.manufacturer||t('Not supplied')}{' '}{t("· Batch:")}{' '}<strong>{searched.batch||t('Not supplied')}</strong></p>
      {result.coverage&&<p>{t("Search completed across")}{' '}{result.coverage.recordCount.toLocaleString(hindi?'hi-IN':'en-IN')}{' '}{t("checked official records.")}</p>}
-     {result.state==='no-match'&&<p>{t("No published alert matching this search was found in those records. CDSCO reports do not list every medicine or manufactured batch. This result does not confirm safety or authenticity.")}</p>}
+     {result.state==='no-match'&&<p>{t("No published alert matching this search was found in those records.")}</p>}
      {result.error&&<p>{t(result.error)}</p>}
      {result.state==='confirmation-needed'&&<p>{t("Possible records are shown below. The supplied details do not establish an exact product, manufacturer and batch match.")}</p>}
      {result.state==='matching-alert'&&<p>{t("A published quality report matches all three supplied identifiers. Read the evidence below and ask a pharmacist or doctor about treatment.")}</p>}
