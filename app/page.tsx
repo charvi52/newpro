@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import {useEffect,useRef,useState} from 'react';
 import {
@@ -136,7 +136,11 @@ export default function Home(){
  useEffect(()=>{if(loaded)try{localStorage.setItem(STORAGE_KEY+':checks',JSON.stringify(checks));}catch{}},[checks,loaded]);
  useEffect(()=>{document.documentElement.lang=hi?'hi':'en';},[hi]);
  useEffect(()=>{if(!notice)return;const id=setTimeout(()=>setNotice(''),6500);return()=>clearTimeout(id);},[notice]);
- useEffect(()=>{if(!modal)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';dialog.current?.querySelector<HTMLElement>('button')?.focus();return()=>{document.body.style.overflow=previous;};},[modal]);
+ useEffect(()=>{if(!modal&&!sastiOpen&&!chemistSlip)return;const previous=document.body.style.overflow;document.body.style.overflow='hidden';dialog.current?.querySelector<HTMLElement>('button')?.focus();return()=>{document.body.style.overflow=previous;};},[modal,sastiOpen,chemistSlip]);
+ useEffect(()=>{
+  const handleKeyDown=(e:KeyboardEvent)=>{if(e.key==='Escape'){if(sastiOpen){setSastiOpen(false);setSastiInitialQ('');}else if(chemistSlip){setChemistSlip(null);}}};
+  window.addEventListener('keydown',handleKeyDown);return()=>window.removeEventListener('keydown',handleKeyDown);
+ },[sastiOpen,chemistSlip]);
  useEffect(()=>()=>{scannerControls.current?.stop();},[]);
 
  function saveManual(){const m={...draft,...Object.fromEntries(fields.map(f=>[f,draft[f].trim()])),origin:'manual' as const,...(demoItems!==null?{demo:true}:{})};const problem=validateMedicine(m);if(problem){setError(problem);return;}
@@ -211,5 +215,47 @@ export default function Home(){
    {modal==='reset'&&<><span className="eyebrow">{t("YOUR DEVICE STORAGE")}</span><h2 id="modal-title">{t("Clear your local cabinet?")}</h2><p className="modal-description">{t("This removes local entries from this browser. It does not delete any saved Supabase cloud cabinet or family messages.")}</p><button className="btn coral full" onClick={reset}>{t("Clear local entries")}<RotateCcw size={17}/></button><button className="text-link centered" onClick={close}>{t("Keep them")}</button></>}
    {error&&<div className="form-error" role="alert"><AlertTriangle size={19}/><p>{t(error)}</p></div>}
   </section></div>}
+   {sastiOpen && (
+     <div
+       className="sasti-dawa-overlay"
+       style={{
+         position: 'fixed',
+         inset: 0,
+         backgroundColor: 'rgba(15, 23, 42, 0.7)',
+         backdropFilter: 'blur(5px)',
+         zIndex: 10000,
+         display: 'flex',
+         alignItems: 'center',
+         justifyContent: 'center',
+         padding: '1.25rem 1rem',
+         overflowY: 'auto',
+       }}
+       onClick={(e) => {
+         if (e.target === e.currentTarget) {
+           setSastiOpen(false);
+           setSastiInitialQ('');
+         }
+       }}
+     >
+       <div style={{ width: '100%', maxWidth: '840px', maxHeight: '92vh', overflowY: 'auto', borderRadius: '20px' }}>
+         <SastiDawaFinder
+           key={sastiInitialQ || 'empty'}
+           onClose={() => {
+             setSastiOpen(false);
+             setSastiInitialQ('');
+           }}
+           hindi={hi}
+           initialQuery={sastiInitialQ}
+         />
+       </div>
+     </div>
+   )}
+   {chemistSlip && (
+     <ChemistAlertSlip
+       data={chemistSlip}
+       onClose={() => setChemistSlip(null)}
+       hindi={hi}
+     />
+   )}
  </div></LanguageProvider>;
 }
