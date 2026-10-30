@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import {useI18n} from '@/components/language';
 import {useEffect,useRef,useState} from 'react';
 import {AlertTriangle,ArrowUpRight,FileText,IndianRupee,Info,Search,XCircle} from 'lucide-react';
@@ -70,6 +70,7 @@ export default function MedicineHistory({product='',manufacturer='',batch='',onC
     </dl>
     <p style={{fontSize:'0.85rem',color:'#047857',fontWeight:600,marginTop:'0.5rem'}}>{hindi?'अपने फार्मासिस्ट से जन औषधि जेनेरिक विकल्प मांगें। देश भर के PMBJP केंद्रों पर उपलब्ध।':'Ask your registered pharmacist for Jan Aushadhi generic substitution. Available at PMBJP Kendras across India.'}</p>
     <a href={PMBJP_SOURCE} target="_blank" rel="noopener noreferrer">{hindi?'सरकारी जन औषधि सूची देखें ↗':'Government PMBJP formulation list (PIB) ↗'}</a>
+     <button onClick={()=>window.open('https://www.google.com/maps/search/Jan+Aushadhi+Kendra+near+me','_blank')} style={{display:'flex',alignItems:'center',gap:'0.5rem',marginTop:'0.9rem',padding:'0.65rem 1.2rem',background:'#0f766e',color:'#fff',border:'none',borderRadius:'8px',fontSize:'0.95rem',fontWeight:600,cursor:'pointer',width:'100%',justifyContent:'center'}} type="button" aria-label={hindi?'नज़दीकी जन औषधि केंद्र खोजें':'Find nearest Jan Aushadhi Kendra'}>📍 {hindi?'नज़दीकी जन औषधि केंद्र खोजें':'Find nearest Jan Aushadhi Kendra'}</button>
    </article>;
   })()}
   <p className="history-privacy">{t("Only the submitted search fields are sent to Carely’s server. CDSCO tables are fetched without your medicine query; photos stay on your device.")}{' '}{t("Medicine names are also sent to Drug Information Service for catalogue candidates.")}</p>
