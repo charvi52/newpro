@@ -1,0 +1,46 @@
+$ tsx --test tests/*.test.ts
+✔ paid AI routes enforce auth, input checks and durable quota before contacting the provider (4.442166ms)
+✔ fresh cabinets are empty, with no fictional medicine or batch alerts (1.030709ms)
+✔ medicine fields and duplicate identity are stable (0.124167ms)
+✔ empty or invalid personal entries cannot be saved (0.085458ms)
+✔ restored entries are only manually saved and de-duplicated (0.140875ms)
+✔ legacy migration discards fictional samples while keeping manual entries (0.05775ms)
+✔ reset clears only Carely storage and not unrelated localStorage keys (0.059166ms)
+✔ updating and deleting changes the target medicine only (0.081375ms)
+✔ India recall endpoint does not misrepresent US FDA results as Indian coverage (0.068333ms)
+✔ the reported ACNEMOIST query is submitted with all three identifiers (97.787625ms)
+✔ network failures, HTTP errors and invalid responses produce explicit errors (0.925958ms)
+✔ a stalled check is bounded and reports a timeout instead of leaving a silent button (11.636583ms)
+✔ caller cancellation is distinguishable from a timeout (0.166542ms)
+✔ large cabinets survive reload and malformed entries do not discard healthy records (1.750333ms)
+✔ family ownership is part of duplicate identity (0.12425ms)
+✔ cloud merge retains local and remote-only records and counts conflicts (0.16325ms)
+✔ failed history periods preserve earlier records, successful empty tables can replace old data (0.169042ms)
+✔ company name agreement can omit the report address without accepting a different company (0.838792ms)
+✔ missing batch returns separately labelled related reports without changing the scoped no-match (0.149ms)
+✔ card tilt remains bounded without affecting dimensions (0.439833ms)
+✔ scanner explicitly prefers rear camera and reports specific permission/device failures (0.184417ms)
+✔ Hindi UI includes the key cabinet, scan and safety outcomes (0.128875ms)
+✔ AI auth and quota fail closed, preserve server auth and never treat malformed responses as approval (8.824375ms)
+✔ cloud saves send expected revision and surface a concurrent-edit rejection (1.105833ms)
+✔ only product, manufacturer AND exact batch agreement yields a confirmed alert (1.190458ms)
+✔ batch punctuation and leading zeros never silently collapse (0.169334ms)
+✔ generic substring and shared manufacturer produce candidates, not exact pack verdicts (0.154958ms)
+✔ spurious reports under investigation cannot confirm manufacturer identity (0.138667ms)
+✔ history orders reporting periods chronologically across years (0.500667ms)
+✔ unavailable live data never creates a reassuring empty result (0.092542ms)
+✔ pagination exposes total and continuation without losing matches (5.719833ms)
+✔ upstream schema changes, truncated tables and wrong months fail closed (0.257125ms)
+✔ upstream errors and non-JSON responses propagate instead of becoming no matches (9.690041ms)
+✔ ordinary retail code never fabricates batch or expiry; GS1 photo payloads preserve evidence (0.591292ms)
+✔ bundled official snapshot is non-empty, traceable and contains no simulated rows (17.015417ms)
+✔ explicit choice takes precedence over system preference; invalid or absent choices follow the device (0.518ms)
+✔ pre-paint theme script applies colour scheme and handles blocked storage (2.142333ms)
+ℹ tests 37
+ℹ suites 0
+ℹ pass 37
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 172.729958

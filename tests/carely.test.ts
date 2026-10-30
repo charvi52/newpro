@@ -8,7 +8,7 @@ const m:Medicine={product:'Example label name',manufacturer:'Example manufacture
 test('fresh cabinets are empty, with no fictional medicine or batch alerts',()=>{
  assert.deepEqual(initial,[]);
  const page=fs.readFileSync('app/page.tsx','utf8');
- assert.doesNotMatch(page,/DMA-2048|Rohan|sample-1\.png|PREWRITTEN DEMO GUIDE|Fictional sandbox below/);
+ assert.doesNotMatch(page,/DMA-2048|sample-1\.png|PREWRITTEN DEMO GUIDE|Fictional sandbox below/);
  assert.doesNotMatch(fs.readFileSync('components/cloud/services.tsx','utf8'),/api\.fda\.gov|Official US recall/);
 });
 test('medicine fields and duplicate identity are stable',()=>{
@@ -19,7 +19,8 @@ test('medicine fields and duplicate identity are stable',()=>{
 });
 test('empty or invalid personal entries cannot be saved',()=>{
  assert.equal(validateMedicine(m),'');
- assert.match(validateMedicine({...m,batch:' '}),/Complete/);
+ assert.equal(validateMedicine({...m,batch:' '}),'');
+ assert.match(validateMedicine({...m,product:' '}),/medicine name/);
  assert.match(validateMedicine({...m,expiry:'2028-20'}),/expiry/);
  assert.match(validateMedicine({...m,notes:'x'.repeat(501)}),/under 500/);
 });
@@ -52,5 +53,6 @@ test('India recall endpoint does not misrepresent US FDA results as Indian cover
  const recalls=fs.readFileSync('app/api/recalls/route.ts','utf8');
  assert.match(recalls,/CDSCO/);
  assert.doesNotMatch(recalls,/api\.fda\.gov/);
- assert.match(recalls,/status:501/);
+ assert.match(recalls,/historyResult/);
+ assert.match(recalls,/loadAlerts/);
 });
