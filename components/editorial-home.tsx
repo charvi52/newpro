@@ -4,8 +4,8 @@ import {ArrowUpRight,Heart,Shield,Plus} from 'lucide-react';
 import {SkyHero,SceneStory,CompanionSection} from './sky-experience';
 import {useI18n} from './language';
 const clamp=(n:number)=>Math.min(1,Math.max(0,n));
-type Props={onCabinet:()=>void;onScan:()=>void;onAlerts:()=>void;onFamily:()=>void;onSample:()=>void;recordCount:number};
-export default function EditorialHome({onCabinet,onScan,onAlerts,onFamily,onSample,recordCount}:Props){
+type Props={onCabinet:()=>void;onScan:()=>void;onAlerts:()=>void;onFamily:()=>void;onSample:()=>void;recordCount:number;onSearch?:(q:string)=>void};
+export default function EditorialHome({onCabinet,onScan,onAlerts,onFamily,onSample,recordCount,onSearch}:Props){
  const {hindi}=useI18n();const t=(en:string,hi:string)=>hindi?hi:en;
  const [faq,setFaq]=useState<number|null>(null);
  useEffect(()=>{const root=document.querySelector('.editorial-home');if(!root)return;const nodes=root.querySelectorAll('[data-reveal]');const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-revealed');observer.unobserve(e.target);}}),{threshold:.12});nodes.forEach(n=>observer.observe(n));return()=>observer.disconnect();},[]);
@@ -22,7 +22,7 @@ export default function EditorialHome({onCabinet,onScan,onAlerts,onFamily,onSamp
   [t('Should I change my medicine after an alert?','अलर्ट मिलने पर क्या दवा बदलनी चाहिए?'),t('Show the exact report and your pack to your doctor or pharmacist. Do not stop or change treatment on your own.','सटीक रिपोर्ट और अपना पैक डॉक्टर या फार्मासिस्ट को दिखाएँ। अपनी मर्ज़ी से इलाज बंद या बदलें नहीं।')]
  ];
  return <div className="editorial-home">
- <SkyHero onCabinet={onCabinet} onScan={onScan} onSample={onSample}/>
+ <SkyHero onCabinet={onCabinet} onScan={onScan} onSample={onSample} onSearch={onSearch}/>
  <section className="e-statement e-wrap" data-reveal><p className="e-kicker">{t('LESS TO REMEMBER. MORE ROOM TO CARE.','याद रखने की चिंता कम। देखभाल के लिए समय ज़्यादा।')}</p><h2 data-reading aria-label={t('Life is full enough. Your medicine details should feel simple.','ज़िंदगी में पहले ही बहुत कुछ है। दवा की जानकारी होनी चाहिए आसान।')}><span aria-hidden="true">{readingWords(t('Life is full enough.','ज़िंदगी में पहले ही बहुत कुछ है।'))}<br/>{readingWords(t('Your medicine details','दवा की जानकारी'))}<br/>{readingWords(t('should feel','होनी चाहिए'))} <em>{readingWords(t('simple.','आसान।'))}</em></span></h2><p>{t('One thoughtful space for the label, the batch, the evidence—and the people behind every pack.','दवा के लेबल, बैच, प्रमाण और हर पैक के पीछे के अपने के लिए एक आसान जगह।')}</p></section>
  <SceneStory onCabinet={onCabinet} onAlerts={onAlerts} onSample={onSample}/>
  <CompanionSection onCabinet={onCabinet}/>

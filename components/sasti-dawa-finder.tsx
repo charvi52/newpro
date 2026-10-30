@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   AlertTriangle,
   ArrowRight,
@@ -20,10 +20,11 @@ import ChemistAlertSlip, { type ChemistSlipData } from './chemist-alert-slip';
 interface SastiDawaFinderProps {
   onClose?: () => void;
   hindi?: boolean;
+  initialQuery?: string;
 }
 
-export default function SastiDawaFinder({ onClose, hindi }: SastiDawaFinderProps) {
-  const [query, setQuery] = useState('');
+export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiDawaFinderProps) {
+  const [query, setQuery] = useState(initialQuery || '');
   const [batch, setBatch] = useState('');
   const [busy, setBusy] = useState(false);
   const [resolved, setResolved] = useState<ResolvedMedicine | null>(null);
@@ -31,6 +32,35 @@ export default function SastiDawaFinder({ onClose, hindi }: SastiDawaFinderProps
   const [error, setError] = useState('');
   const [chemistSlip, setChemistSlip] = useState<ChemistSlipData | null>(null);
   const [playingVoice, setPlayingVoice] = useState(false);
+
+  // Auto-search when opened with an initial query from hero search bar
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      setQuery(initialQuery);
+      // Trigger search after a short delay to ensure component is mounted
+      const timer = setTimeout(() => {
+        const url = new URL('/api/medicine/resolve', window.location.origin);
+        url.searchParams.set('q', initialQuery.trim());
+        setBusy(true);
+        setError('');
+        setResolved(null);
+        setCdscoCheck(null);
+        fetch(url.toString())
+          .then(r => r.json())
+          .then((json: any) => {
+            if (json.success && json.data) {
+              setResolved(json.data.resolved);
+              setCdscoCheck(json.data.cdsco);
+            } else {
+              setError(json.error || 'No medicine information found.');
+            }
+          })
+          .catch(() => setError('Network error'))
+          .finally(() => setBusy(false));
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSearch(e?: React.FormEvent) {
     if (e) e.preventDefault();
