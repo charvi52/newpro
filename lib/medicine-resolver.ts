@@ -54,14 +54,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
   precautionHi: string;
 }> = [
   {
-    brands: ['augmentin', 'augmentin 625', 'augmentin 625 duo', 'moxikind-cv', 'moxclav', 'clamoduo'],
+    brands: ['augmentin', 'augmentin 625', 'augmentin 625 duo', 'moxclav', 'clamoduo'],
     salt: 'Amoxicillin + Potassium Clavulanate',
     strength: '500 mg + 125 mg',
     form: 'tablet',
     brandPrice: 204.0,
-    genericPrice: 55.0,
-    janAushadhiName: 'Amoxycillin and Potassium Clavulanate Tablets IP 625mg',
-    janAushadhiCode: 'PMBJP-0021',
+    genericPrice: 75.0,
+    janAushadhiName: 'Moxikind-CV 625',
+    janAushadhiCode: 'ALT-MED-01',
     purposeEn: 'Bacterial infections of throat, chest, lungs, skin and dental infections',
     purposeHi: 'गले, छाती, फेफड़ों, त्वचा या दाँतों में बैक्टीरियल इन्फेक्शन के इलाज के लिए',
     timingEn: 'Take with food or immediately after a meal to prevent stomach upset',
@@ -70,14 +70,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'डॉक्टर द्वारा बताया गया पूरा कोर्स खत्म करें; बीच में न रोकें',
   },
   {
-    brands: ['pan-d', 'pan d', 'pantocid-d', 'pantodac-dsr', 'pantop-d', 'penta-d'],
+    brands: ['pan-d', 'pan d', 'pantodac-dsr', 'pantop-d', 'penta-d'],
     salt: 'Pantoprazole + Domperidone',
     strength: '40 mg + 30 mg',
     form: 'capsule',
     brandPrice: 198.0,
-    genericPrice: 35.0,
-    janAushadhiName: 'Pantoprazole (Gastro-resistant) & Domperidone (Prolonged-release) Capsules IP',
-    janAushadhiCode: 'PMBJP-0144',
+    genericPrice: 42.0,
+    janAushadhiName: 'Pantocid-DSR',
+    janAushadhiCode: 'ALT-MED-02',
     purposeEn: 'Acidity, heartburn, gastroesophageal reflux (GERD) and nausea',
     purposeHi: 'एसिडिटी, सीने में जलन, गैस, खट्टी डकार और उल्टी जैसी समस्या के लिए',
     timingEn: 'Take 30 minutes before breakfast on an empty stomach with a glass of water',
@@ -86,14 +86,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'कैप्सूल को चबाएँ या तोड़ें नहीं; साबुत पानी के साथ निगलें',
   },
   {
-    brands: ['allegra', 'allegra 120', 'allegra 180', 'fexova', 'histafree'],
+    brands: ['allegra', 'allegra 120', 'allegra 180', 'histafree'],
     salt: 'Fexofenadine Hydrochloride',
     strength: '120 mg',
     form: 'tablet',
     brandPrice: 228.0,
-    genericPrice: 38.0,
-    janAushadhiName: 'Fexofenadine Hydrochloride Tablets IP 120mg',
-    janAushadhiCode: 'PMBJP-0480',
+    genericPrice: 58.0,
+    janAushadhiName: 'Fexova 120',
+    janAushadhiCode: 'ALT-MED-03',
     purposeEn: 'Allergic rhinitis, sneezing, runny nose, itchy skin and seasonal allergies',
     purposeHi: 'एलर्जी, छींकें, बहती नाक, त्वचा पर खुजली और धूल-मिट्टी की एलर्जी के लिए',
     timingEn: 'Take once daily with water; avoid taking with fruit juices (apple/orange)',
@@ -102,14 +102,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'इससे नींद नहीं आती; दिन में काम करते समय भी ले सकते हैं',
   },
   {
-    brands: ['shelcal', 'shelcal 500', 'cipcal 500', 'gemcal', 'calcium 500'],
+    brands: ['shelcal', 'shelcal 500', 'gemcal', 'calcium 500'],
     salt: 'Calcium Carbonate + Vitamin D3 (Cholecalciferol)',
     strength: '500 mg + 250 IU',
     form: 'tablet',
     brandPrice: 145.0,
-    genericPrice: 28.0,
-    janAushadhiName: 'Calcium 500mg with Vitamin D3 250 IU Tablets IP',
-    janAushadhiCode: 'PMBJP-0095',
+    genericPrice: 48.0,
+    janAushadhiName: 'Cipcal 500',
+    janAushadhiCode: 'ALT-MED-04',
     purposeEn: 'Calcium and Vitamin D deficiency, strengthening bones, osteoporosis prevention',
     purposeHi: 'कैल्शियम और विटामिन डी की कमी दूर करने व हड्डियों को मजबूत बनाने के लिए',
     timingEn: 'Take after lunch or dinner with water or milk',
@@ -118,14 +118,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'थायराइड या आयरन की गोली के साथ न लें (2-3 घंटे का अंतर रखें)',
   },
   {
-    brands: ['thyronorm', 'eltroxin', 'thyrox', 'thyrofit', 'levothyroxine'],
+    brands: ['thyronorm', 'thyrox', 'thyrofit', 'levothyroxine'],
     salt: 'Levothyroxine Sodium',
     strength: '50 mcg',
     form: 'tablet',
     brandPrice: 175.0,
-    genericPrice: 32.0,
-    janAushadhiName: 'Levothyroxine Sodium Tablets IP 50mcg',
-    janAushadhiCode: 'PMBJP-0388',
+    genericPrice: 52.0,
+    janAushadhiName: 'Eltroxin 50',
+    janAushadhiCode: 'ALT-MED-05',
     purposeEn: 'Hypothyroidism (underactive thyroid hormone replacement)',
     purposeHi: 'हाइपोथायरायडिज्म (थायराइड हार्मोन की कमी) को संतुलित करने के लिए',
     timingEn: 'Strictly first thing in the morning on an empty stomach with plain water, 45 mins before tea/breakfast',
@@ -134,14 +134,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'रोजाना बिना भूले लें और नियमित समय पर TSH ब्लड टेस्ट करवाएं',
   },
   {
-    brands: ['dolo', 'dolo 650', 'calpol 650', 'pacimol 650', 'crocin 650', 'paracetamol 650'],
+    brands: ['dolo', 'dolo 650', 'crocin 650', 'paracetamol 650'],
     salt: 'Paracetamol',
     strength: '650 mg',
     form: 'tablet',
     brandPrice: 34.0,
-    genericPrice: 11.5,
-    janAushadhiName: 'Paracetamol Tablets IP 650mg',
-    janAushadhiCode: 'PMBJP-0008',
+    genericPrice: 15.0,
+    janAushadhiName: 'Calpol 650 / Pacimol 650',
+    janAushadhiCode: 'ALT-MED-06',
     purposeEn: 'Fever reduction and relief from mild-to-moderate body ache/headache',
     purposeHi: 'बुखार कम करने और बदन दर्द, सिरदर्द से राहत पाने के लिए',
     timingEn: 'Take after food as needed; keep at least 4 to 6 hours between doses',
@@ -150,14 +150,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: '24 घंटे में 4 गोली से ज्यादा न लें; लिवर सुरक्षा के लिए अन्य पैरासिटामोल के साथ न मिलाएं',
   },
   {
-    brands: ['telma', 'telma 40', 'telmikind', 'telvas', 'telista'],
+    brands: ['telma', 'telma 40', 'telvas', 'telista'],
     salt: 'Telmisartan',
     strength: '40 mg',
     form: 'tablet',
     brandPrice: 155.0,
-    genericPrice: 18.0,
-    janAushadhiName: 'Telmisartan Tablets IP 40mg',
-    janAushadhiCode: 'PMBJP-0245',
+    genericPrice: 38.0,
+    janAushadhiName: 'Telmikind 40',
+    janAushadhiCode: 'ALT-MED-07',
     purposeEn: 'High blood pressure (hypertension) and cardiovascular risk protection',
     purposeHi: 'हाई ब्लड प्रेशर (उच्च रक्तचाप) को नियंत्रित करने और दिल की सुरक्षा के लिए',
     timingEn: 'Take once daily at the same fixed time, with or without food',
@@ -166,14 +166,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'बिना डॉक्टर की सलाह के अचानक बंद न करें; समय-समय पर BP मापें',
   },
   {
-    brands: ['glycomet', 'glycomet 500', 'glycomet sr', 'gluconorm', 'metformin'],
+    brands: ['glycomet', 'glycomet 500', 'glycomet sr', 'metformin'],
     salt: 'Metformin Hydrochloride',
     strength: '500 mg',
     form: 'tablet',
     brandPrice: 48.0,
-    genericPrice: 8.5,
-    janAushadhiName: 'Metformin Hydrochloride Tablets IP 500mg',
-    janAushadhiCode: 'PMBJP-0027',
+    genericPrice: 18.0,
+    janAushadhiName: 'Gluconorm 500',
+    janAushadhiCode: 'ALT-MED-08',
     purposeEn: 'Type 2 Diabetes mellitus blood sugar control',
     purposeHi: 'टाइप 2 डायबिटीज में ब्लड शुगर (मधुमेह) को सामान्य रखने के लिए',
     timingEn: 'Take with or immediately after meals to reduce stomach discomfort',
@@ -299,9 +299,9 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     strength: '0.5% w/v',
     form: 'eye drop',
     brandPrice: 145.0,
-    genericPrice: 24.0,
-    janAushadhiName: 'Carboxymethylcellulose Sodium Eye Drops IP 0.5% w/v (10ml)',
-    janAushadhiCode: 'PMBJP-0352',
+    genericPrice: 58.0,
+    janAushadhiName: 'Tears Plus / E-Tears (0.5% CMC)',
+    janAushadhiCode: 'ALT-EYE-01',
     purposeEn: 'Dry eyes, burning sensation, ocular irritation, digital screen strain and post-LASIK lubrication',
     purposeHi: 'आँखों का सूखापन (ड्राई आई सिंड्रोम), जलन, स्क्रीन की थकान और आँखों के लुब्रिकेशन के लिए',
     timingEn: 'Instill 1 to 2 drops into affected eye(s) 3 to 4 times daily as needed; for ophthalmic use only, do NOT swallow',
@@ -310,14 +310,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'ड्रॉपर की नोक को आँख या किसी सतह से न छुएँ। शीशी खुलने के 1 महीने बाद इस्तेमाल न करें',
   },
   {
-    brands: ['moxicip', 'moxicip eye drops', 'vigamox', 'moxiflox', 'moxifloxacin eye drops'],
+    brands: ['moxicip', 'moxicip eye drops', 'moxiflox', 'moxifloxacin eye drops'],
     salt: 'Moxifloxacin Hydrochloride',
     strength: '0.5% w/v',
     form: 'eye drop',
     brandPrice: 175.0,
-    genericPrice: 28.0,
-    janAushadhiName: 'Moxifloxacin Eye Drops IP 0.5% w/v (5ml)',
-    janAushadhiCode: 'PMBJP-0466',
+    genericPrice: 65.0,
+    janAushadhiName: 'Ciplox / Milflox (0.5% Moxifloxacin)',
+    janAushadhiCode: 'ALT-EYE-02',
     purposeEn: 'Bacterial eye infections, conjunctivitis (pink eye) and post-surgery prophylaxis',
     purposeHi: 'आँखों के बैक्टीरियल इन्फेक्शन, कंजंक्टिवाइटिस (आँख आना) और सर्जरी के बाद सुरक्षा के लिए',
     timingEn: 'Instill 1 drop in the affected eye(s) 3 times a day for 7 days as prescribed',
@@ -406,14 +406,14 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'लगाने से पहले घाव को साफ पानी से धो लें; आँखों में न जाने दें',
   },
   {
-    brands: ['betadine', 'betadine ointment', 'cipladine', 'povidone iodine'],
+    brands: ['betadine', 'betadine ointment', 'povidone iodine'],
     salt: 'Povidone Iodine',
     strength: '5% w/w',
     form: 'ointment',
     brandPrice: 125.0,
-    genericPrice: 22.0,
-    janAushadhiName: 'Povidone Iodine Ointment IP 5% w/w (20g)',
-    janAushadhiCode: 'PMBJP-0108',
+    genericPrice: 45.0,
+    janAushadhiName: 'Cipladine 5% Ointment',
+    janAushadhiCode: 'ALT-SKIN-01',
     purposeEn: 'Antiseptic protection for cuts, wounds, minor burns, ulcers and post-operative dressings',
     purposeHi: 'कटने, छिलने, जलने या चोट लगने पर कीटाणुनाशक (एंटीसेप्टिक) मरहम के रूप में',
     timingEn: 'Clean the affected area and apply 1-2 times daily; may be covered with sterile gauze',
@@ -619,7 +619,7 @@ If it IS a real medicine, return ONLY a valid JSON object matching this schema:
   "precautionHi": string (Key safety warning in Hindi)
 }`;
 
-      const geminiModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+      const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
       const geminiRes = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`,
         {
@@ -679,9 +679,11 @@ If it IS a real medicine, return ONLY a valid JSON object matching this schema:
           }
         }
       } else {
-        // Non-OK Gemini response — fall through to next tier
+        const errBody = await geminiRes.text();
+        console.error('[Gemini Tier-2 HTTP Error]', geminiRes.status, errBody.substring(0, 300));
       }
-    } catch {
+    } catch (err) {
+      console.error('[Gemini Tier-2 Exception]', err);
       // Gemini timeout or network error — fall through to OpenAI / public APIs
     }
   }
@@ -805,7 +807,7 @@ If it IS a real medicine, return ONLY a valid JSON object matching this schema:
           brandPrice,
           genericPrice,
           savingsPercent: 78,
-          janAushadhiName: `${rawName.replace(/\[.*?\]/g, '').trim()} - Jan Aushadhi Generic Equivalent`,
+          janAushadhiName: `${rawName.replace(/\[.*?\]/g, '').trim()} (Affordable Alternative)`,
           janAushadhiCode: 'PMBJP-RXNORM',
           purpose: {
             en: `Formulation (${rawName}) indexed in official pharmaceutical records.`,
@@ -934,7 +936,7 @@ If it IS a real medicine, return ONLY a valid JSON object matching this schema:
     brandPrice: defaultBrandPrice,
     genericPrice: defaultGenericPrice,
     savingsPercent: defaultSavings,
-    janAushadhiName: `${query} Generic Equivalent (Jan Aushadhi)`,
+    janAushadhiName: `${query} (Affordable Alternative Brand)`,
     janAushadhiCode: 'PMBJP-AVAIL',
     purpose: {
       en: purposeEn,
