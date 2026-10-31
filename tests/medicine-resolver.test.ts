@@ -4,6 +4,7 @@ import { resolveMedicine, checkDrugInteractions, evaluateExpiry } from '../lib/m
 
 test('resolveMedicine correctly resolves popular Indian brand Augmentin 625 to generic PMBJP alternative', async () => {
   const res = await resolveMedicine('Augmentin 625');
+  assert.ok(res, 'Augmentin 625 must resolve (not null)');
   assert.equal(res.salt, 'Amoxicillin + Potassium Clavulanate');
   assert.ok(res.savingsPercent >= 60, 'Savings should be 60% or higher');
   assert.ok(res.genericPrice < res.brandPrice, 'Jan Aushadhi price must be lower than brand');
@@ -12,6 +13,7 @@ test('resolveMedicine correctly resolves popular Indian brand Augmentin 625 to g
 
 test('resolveMedicine correctly resolves Pan-D to Pantoprazole + Domperidone with high savings', async () => {
   const res = await resolveMedicine('Pan-D');
+  assert.ok(res, 'Pan-D must resolve (not null)');
   assert.equal(res.salt, 'Pantoprazole + Domperidone');
   assert.equal(res.form, 'capsule');
   assert.ok(res.genericPrice < 50);
