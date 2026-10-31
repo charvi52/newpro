@@ -17,6 +17,14 @@ export async function GET(request: Request) {
     // 1. Resolve medicine, generic alternative, and prices
     const resolved = await resolveMedicine(q);
 
+    if (!resolved) {
+      return NextResponse.json({
+        success: false,
+        error: 'This does not appear to be a recognized medicine. Please check the spelling and try again.',
+        errorHi: 'यह कोई मान्यता प्राप्त दवा नहीं लगती। कृपया नाम जाँचें और दोबारा प्रयास करें।',
+      }, { status: 404 });
+    }
+
     // 2. Cross-check batch against official CDSCO alerts
     let cdscoCheck: {
       checked: boolean;

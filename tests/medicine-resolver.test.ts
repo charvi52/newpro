@@ -19,6 +19,7 @@ test('resolveMedicine correctly resolves Pan-D to Pantoprazole + Domperidone wit
 
 test('resolveMedicine provides guaranteed smart fallback for uncommon medicine names', async () => {
   const res = await resolveMedicine('SomeUncommonMedicine123');
+  assert.ok(res, 'Should return a result for a plausible medicine-like name');
   assert.ok(res.salt.includes('SomeUncommonMedicine123'));
   assert.ok(res.genericPrice > 0);
   assert.ok(res.savingsPercent > 0);
