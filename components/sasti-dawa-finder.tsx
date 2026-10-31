@@ -467,6 +467,10 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 >
                   {hindi ? `सीधी बचत ~${resolved.savingsPercent}%` : `Save ~${resolved.savingsPercent}% OFF!`}
                 </span>
+                <div style={{ marginTop: '6px', fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>
+                  <Pill size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
+                  {hindi ? 'जेनेरिक दवा: ' : 'Generic: '}{resolved.janAushadhiName}
+                </div>
               </div>
             </div>
 
