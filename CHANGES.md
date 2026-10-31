@@ -1,3 +1,32 @@
+# Carely reliability and honesty fixes — 1 November 2026
+
+This release fixes correctness and safety bugs found in a full review, tightens the "no invented data" guarantees, removes dead code and passes the full verification suite (57 automated tests, `tsc --noEmit` clean, production build clean).
+
+## Safety fixes
+
+- **Chemist Alert Slip could accuse any medicine.** The detail view generated an "Official CDSCO Medicine Quality Alert Slip" for every saved medicine with a batch number — including harmless ones and demo entries — and filled missing laboratory/issue fields with plausible-looking fabricated text. The slip now appears only when an exact CDSCO record match exists, quotes that record's laboratory, issue and reporting period, and missing fields now read "Not stated in the official record".
+- **The resolve endpoint could name the wrong critical record.** It looked up the CDSCO record by batch number alone while the match decision used product+manufacturer+batch, so a record from a different product sharing a batch could be shown as the critical match. It now quotes the exact record from the scoped search.
+- **Malformed expiry no longer reads "SAFE / VALID".** Expiry strings like `2026-XX` previously fell through NaN comparisons into the safe branch; invalid calendars now return an explicit "Invalid Date" state. GS1 day-`00` expiry (the encoded "last day of month") now resolves to the real month-end date instead of the literal string `last day`.
+
+## Honesty fixes
+
+- **The resolver no longer invents prices.** Missing or unusable AI price data previously fell back to fabricated defaults (₹120 brand price, 45% cheaper alternative, clamped savings) and advertised a CDSCO source link for AI-generated content. Unusable prices now fall back to the curated database or no result.
+- **Record coverage counts are real.** The hardcoded "7,900+" claims (the bundled snapshot actually holds 7,005 records) are replaced by the live record count from the snapshot, in both English and Hindi.
+- **Queries under three characters no longer match a random medicine.** Short text like "me" previously matched the first curated salt containing it.
+
+## Reliability fixes
+
+- The `POST /api/medicine/resolve` route faked its own HTTP call to `http://localhost/...`, which fails on any non-default port; it now calls the shared handler directly.
+- The family inbox poller and token refresh used a session state closure that went stale after a silent token refresh, producing spurious "Your session expired. Please sign in again." sign-outs; session handling now reads a ref that is always current, and rotating refresh tokens are used before they are replaced.
+- The "Try indexed CDSCO alert" sample button silently did nothing if the bundled snapshot changed; it is disabled unless the referenced record actually exists.
+- React hook rule violations fixed: `useCatalogRecord` was called inside a callback (renamed to `applyCatalogRecord`); refs were written during render in the motion and cloud panels and are now synced in effects.
+
+## Cleanup
+
+- Removed dead files `app/chatgpt-auth.ts` (unreferenced, and its header-trust logic would be client-spoofable if ever wired up) and `lib/connectors.ts` (unreferenced).
+- `drizzle.config.ts` now targets the PostgreSQL engine the project actually uses instead of SQLite; `.env.example` documents `GEMINI_API_KEY`/`GEMINI_MODEL`.
+- Deduplicated the three copy-pasted fetch paths in `SastiDawaFinder`, typed the Gemini/CDSCO responses, removed unused imports and props, and added regression tests for the expiry, barcode, resolver and price-honesty fixes above. Lint errors dropped from 17 to 6; the remaining six are the pre-existing storage-hydration `setState`-in-effect patterns, safe at runtime and due for a restructuring pass.
+
 # Carely premium motion and reliability release — 30 October 2026
 
 This release retains the existing navigation, typefaces, palette and layout. It adds exactly two decorative motion treatments and fixes the concrete issues found in the prior review. New interface text is limited to functional feedback, cloud-save review, related/catalogue results and Hindi translations.

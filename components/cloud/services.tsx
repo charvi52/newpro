@@ -37,9 +37,15 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
  const [selected,setSelected]=useState('');
  const [cloudReview,setCloudReview]=useState<{items:Medicine[];revision:number;conflicts:number;device:string}|null>(null);
  const refreshToken=useRef<Promise<string>|null>(null);
- const latestItems=useRef(items);latestItems.current=items;
+ const latestItems=useRef(items);
+ // Sessions must be refreshed inside async callbacks and the polling interval,
+ // where the state closure would otherwise stay stale after a token refresh.
+ const sessionRef=useRef<Session|null>(null);
  const active=items.find((m,i)=>String(i)===selected);
  const configured=Boolean(base&&anon)&&(status?.supabase!==false);
+
+ useEffect(()=>{latestItems.current=items;},[items]);
+ useEffect(()=>{sessionRef.current=session;},[session]);
 
  useEffect(()=>{
   try{const saved=sessionStorage.getItem('carely-account');if(saved){const s=JSON.parse(saved) as Session;if(s?.user?.id&&s.refresh_token)setSession(s);}}
@@ -48,14 +54,15 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
  },[]);
 
  async function token(){
-  if(!session||!base||!anon)throw Error('Sign in to use this service.');
-  if(session.expires_at>Date.now()+30000)return session.access_token;
+  const current=sessionRef.current;
+  if(!current||!base||!anon)throw Error('Sign in to use this service.');
+  if(current.expires_at>Date.now()+30000)return current.access_token;
   if(refreshToken.current)return refreshToken.current;
-  refreshToken.current=(async()=>{const response=await fetch(`${base}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:session.refresh_token}),signal:AbortSignal.timeout(15000)});
+  refreshToken.current=(async()=>{const response=await fetch(`${base}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:current.refresh_token}),signal:AbortSignal.timeout(15000)});
   const data=await response.json() as AuthResponse;
-  if(!response.ok||!data.access_token){sessionStorage.removeItem('carely-account');setSession(null);throw Error('Your session expired. Please sign in again.');}
+  if(!response.ok||!data.access_token){sessionStorage.removeItem('carely-account');sessionRef.current=null;setSession(null);throw Error('Your session expired. Please sign in again.');}
   const updated={...data,expires_at:Date.now()+data.expires_in*1000};
-  sessionStorage.setItem('carely-account',JSON.stringify(updated));setSession(updated);return updated.access_token;})();
+  sessionStorage.setItem('carely-account',JSON.stringify(updated));sessionRef.current=updated;setSession(updated);return updated.access_token;})();
   try{return await refreshToken.current;}finally{refreshToken.current=null;}
  }
  async function db<T>(table:string,method='GET',body?:unknown){
@@ -70,7 +77,7 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
   if(!response.ok)throw Error(data.msg||data.error_description||data.message||'Authentication failed.');
   setPassword('');
   if(!data.access_token){setMessage('Check your email to confirm your account, then sign in.');return;}
-  const s={...data,expires_at:Date.now()+data.expires_in*1000};setSession(s);sessionStorage.setItem('carely-account',JSON.stringify(s));setMessage('Signed in successfully.');
+  const s={...data,expires_at:Date.now()+data.expires_in*1000};sessionRef.current=s;setSession(s);sessionStorage.setItem('carely-account',JSON.stringify(s));setMessage('Signed in successfully.');
  });}
  async function refreshFamily(){
   const [g,n]=await Promise.all([db<Grant[]>('carely_family?select=*&order=id.asc'),db<Note[]>('carely_notifications?select=*&order=created_at.desc&limit=30')]);
@@ -78,7 +85,7 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
  }
  async function signOut(){await run(async()=>{
   try{await fetch(`${base}/auth/v1/logout`,{method:'POST',headers:{apikey:anon!,Authorization:`Bearer ${await token()}`}});}finally{
-   sessionStorage.removeItem('carely-account');setSession(null);setGrants([]);setNotes([]);setAnswer('');setCloudReview(null);setMessage('Signed out. Medicines saved on this device have been kept.');
+   sessionStorage.removeItem('carely-account');sessionRef.current=null;setSession(null);setGrants([]);setNotes([]);setAnswer('');setCloudReview(null);setMessage('Signed out. Medicines saved on this device have been kept.');
   }
  });}
 
