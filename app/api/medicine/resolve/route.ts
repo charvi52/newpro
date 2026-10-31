@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { resolveMedicine } from '@/lib/medicine-resolver';
+import { hasLiveSearch, resolveMedicine } from '@/lib/medicine-resolver';
 import { loadOfflineSnapshot, batchStatus } from '@/lib/offline-medical';
 
 export const runtime = 'nodejs';
@@ -29,11 +29,19 @@ async function resolveWithAlerts(q: string, batch: string): Promise<Response> {
     const resolved = await resolveMedicine(q);
 
     if (!resolved) {
-      return NextResponse.json({
-        success: false,
-        error: 'This does not appear to be a recognized medicine. Please check the spelling and try again.',
-        errorHi: 'यह कोई मान्यता प्राप्त दवा नहीं लगती। कृपया नाम जाँचें और दोबारा प्रयास करें।',
-      }, { status: 404 });
+      return hasLiveSearch()
+        ? NextResponse.json({
+          success: false,
+          error: 'This does not appear to be a recognized medicine. Please check the spelling and try again.',
+          errorHi: 'यह कोई मान्यता प्राप्त दवा नहीं लगती। कृपया नाम जाँचें और दोबारा प्रयास करें।',
+        }, { status: 404 })
+        // Without the live provider only curated entries are searchable; denying that the
+        // medicine exists would be a false claim about a real product.
+        : NextResponse.json({
+          success: false,
+          error: 'This medicine is not in the bundled list of popular Indian medicines. Live search for any medicine is currently not configured on the server (missing GEMINI_API_KEY). Try a popular brand such as Augmentin 625, Pan-D or Dolo 650.',
+          errorHi: 'यह दवा बंडल की लोकप्रिय दवाओं की सूची में नहीं है। किसी भी दवा की लाइव खोज अभी सर्वर पर सेट नहीं है (GEMINI_API_KEY गायब)। Augmentin 625, Pan-D या Dolo 650 जैसे लोकप्रिय नाम आज़माएँ।',
+        }, { status: 404 });
     }
 
     // 2. Cross-check batch against official CDSCO alerts

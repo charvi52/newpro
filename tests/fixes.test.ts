@@ -38,3 +38,15 @@ test('resolver never invents prices when data is missing',async()=>{
  // fabricated default price.
  assert.equal(await resolveMedicine('not-a-real-medicine-name-12345'),null);
 });
+
+test('verified curated entry: Moximax-D resolves with real MRP and a cheaper same-salt brand',async()=>{
+ const m=await resolveMedicine('moximax-d');
+ assert.ok(m);
+ assert.equal(m.salt,'Moxifloxacin + Dexamethasone');
+ assert.equal(m.brandPrice,142.25);
+ assert.equal(m.genericPrice,103.0);
+ assert.equal(m.janAushadhiName,'Moxitak-D Eye Drops (10 ml)');
+ // Caret-checked: (142.25-103)/142.25 rounds to 28%.
+ assert.equal(m.savingsPercent,28);
+ assert.equal(m.form,'eye drop');
+});

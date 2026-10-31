@@ -326,6 +326,22 @@ export const POPULAR_INDIAN_MEDICINES: Array<{
     precautionHi: 'इन्फेक्शन के दौरान कॉन्टैक्ट लेंस न पहनें; दवा का पूरा कोर्स करें',
   },
   {
+    brands: ['moximax-d', 'moximax d'],
+    salt: 'Moxifloxacin + Dexamethasone',
+    strength: '0.5% w/v + 0.1% w/v',
+    form: 'eye drop',
+    brandPrice: 142.25,
+    genericPrice: 103.0,
+    janAushadhiName: 'Moxitak-D Eye Drops (10 ml)',
+    janAushadhiCode: 'ALT-EYE-03',
+    purposeEn: 'Bacterial eye infections with inflammation, such as conjunctivitis, and post-operative inflammation control',
+    purposeHi: 'आँखों के बैक्टीरियल इन्फेक्शन और सूजन (कंजंक्टिवाइटिस) के इलाज के लिए',
+    timingEn: 'Instill 1 drop into the affected eye(s) 2 to 4 times daily as prescribed; complete the full course',
+    timingHi: 'डॉक्टर की सलाह अनुसार प्रभावित आँख में दिन में 2-4 बूँद डालें; पूरा कोर्स करें',
+    precautionEn: 'Steroid-antibiotic combination: use only with a prescription, do not stop early, and discard 1 month after opening',
+    precautionHi: 'स्टेरॉयड-एंटीबायोटिक संयोजन: केवल पर्चे से लें; कोर्स बीच में न रोकें; शीशी खुलने के 1 महीने बाद बदलें',
+  },
+  {
     brands: ['ascoril', 'ascoril ls', 'ambrodil', 'brozedex', 'grilinctus'],
     salt: 'Levosalbutamol + Ambroxol + Guaiphenesin',
     strength: '1 mg + 30 mg + 50 mg / 5ml',
@@ -552,6 +568,15 @@ export const INTERACTION_RULES: Array<{
 ];
 
 /**
+ * Whether the server is configured for live AI pharmacopoeia search. When false,
+ * resolveMedicine only knows the bundled curated entries, and the resolve route
+ * must say so instead of implying the medicine does not exist.
+ */
+export function hasLiveSearch(): boolean {
+  return Boolean(process.env.GEMINI_API_KEY);
+}
+
+/**
  * Resolve any medicine name (Augmentin, Pan-D, Allegra, etc.) to its active salt,
  * Jan Aushadhi generic equivalent, prices and precautions.
  */
@@ -594,27 +619,44 @@ Return ONLY a valid JSON object matching:
 }`;
 
       const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`,
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
+      // googleSearch grounding makes this a genuine live web lookup (real retailer
+      // listings) instead of an answer generated from training memory.
+      const callGemini = (useSearch: boolean) => fetch(
+        `${endpoint}?key=${geminiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: geminiPrompt }] }],
+            ...(useSearch ? { tools: [{ googleSearch: {} }] } : {}),
             generationConfig: {
               responseMimeType: 'application/json',
               temperature: 0.1,
             },
           }),
-          signal: AbortSignal.timeout(8000),
+          signal: AbortSignal.timeout(15000),
         }
       );
 
+      let liveSourced = true;
+      let geminiRes = await callGemini(true);
+      if (!geminiRes.ok) {
+        // Grounding can fail (quota exhausted, model without tool support). Retry once
+        // from model memory, but label the source honestly instead of claiming search.
+        liveSourced = false;
+        geminiRes = await callGemini(false);
+      }
+
       if (geminiRes.ok) {
         const json = (await geminiRes.json()) as {
-          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+          candidates?: Array<{
+            content?: { parts?: Array<{ text?: string }> };
+            groundingMetadata?: { groundingChunks?: Array<{ web?: { uri?: string; title?: string } }> };
+          }>;
         };
         const textContent = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        const webChunk = json.candidates?.[0]?.groundingMetadata?.groundingChunks?.find((c) => c.web?.uri)?.web;
         if (textContent) {
           const parsed = JSON.parse(textContent) as {
             notFound?: boolean;
@@ -661,8 +703,12 @@ Return ONLY a valid JSON object matching:
                 en: String(parsed.precautionEn || 'Consult doctor before use.'),
                 hi: String(parsed.precautionHi || 'उपयोग से पहले डॉक्टर से परामर्श लें।'),
               },
-              source: 'Google Gemini Live Pharmacopoeia Search',
-              sourceUrl: 'https://generativelanguage.google.com/',
+              // Cite the actual page the grounded search used; a bare "AI model"
+              // link only for memory-only answers.
+              source: liveSourced
+                ? `Google Gemini live web search${webChunk?.title ? ` — ${webChunk.title}` : ''}`
+                : 'Google Gemini (offline model knowledge)',
+              sourceUrl: webChunk?.uri || 'https://generativelanguage.google.com/',
             };
           }
         }

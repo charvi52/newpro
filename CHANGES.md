@@ -1,5 +1,9 @@
 # Carely reliability and honesty fixes — 1 November 2026
 
+- **Live web search is now real.** The Gemini resolver previously sent "search and resolve" in the prompt but never enabled Gemini's Google Search tool, so results came from model memory while being presented as live lookups. Grounding (`tools: [{googleSearch: {}}]`) is now on: queries fetch actual retailer/pharmacopoeia pages, the card can cite the exact source page it used, and if grounding fails (quota/tool limits) a single memory-based retry is labelled "offline model knowledge" instead of claiming a search.
+- **Unknown-medicine errors are honest about capability.** Without `GEMINI_API_KEY`, the resolver only knows the bundled curated entries; the 404 now says live search is not configured instead of implying the medicine does not exist. `/api/status` exposes `liveResolver` so the UI can reflect it.
+- **Verified new curated entry:** Moximax-D eye drops (moxifloxacin 0.5% + dexamethasone 0.1%, MRP ₹142.25 per 1mg/Zepto/PharmEasy listings) with the cheaper same-salt Moxitak-D 10 ml at ₹103 (Apollo substitute listing), added with a regression test.
+
 This release fixes correctness and safety bugs found in a full review, tightens the "no invented data" guarantees, removes dead code and passes the full verification suite (57 automated tests, `tsc --noEmit` clean, production build clean).
 
 ## Safety fixes
