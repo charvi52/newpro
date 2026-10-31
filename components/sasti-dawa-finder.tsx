@@ -101,8 +101,8 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
     setPlayingVoice(true);
 
     const speechText = hindi
-      ? `माताजी, यह दवा ${resolved.brand} है। इसका असली साल्ट ${resolved.salt} है। यह ${resolved.purpose.hi} के लिए है। इसे ${resolved.timing.hi}। जन औषधि केंद्र पर यह बहुत सस्ती केवल ₹${resolved.genericPrice} में मिलती है।`
-      : `This medicine is ${resolved.brand}. Active salt is ${resolved.salt}. Used for ${resolved.purpose.en}. ${resolved.timing.en}. Jan Aushadhi generic price is just ₹${resolved.genericPrice}.`;
+      ? `यह दवा ${resolved.brand} है। इसका साल्ट ${resolved.salt} है। यह ${resolved.purpose.hi} के लिए है। इसे ${resolved.timing.hi}। इसकी सस्ती दवा ${resolved.janAushadhiName} है जो केवल ₹${resolved.genericPrice} में मिलती है।`
+      : `This medicine is ${resolved.brand}. Active salt is ${resolved.salt}. Used for ${resolved.purpose.en}. ${resolved.timing.en}. A cheaper alternative is ${resolved.janAushadhiName} at just ₹${resolved.genericPrice}.`;
 
     const utterance = new SpeechSynthesisUtterance(speechText);
     utterance.lang = hindi ? 'hi-IN' : 'en-IN';
@@ -148,9 +148,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
               {hindi ? 'सस्ती दवा खोजक एवं जन औषधि मूल्य तुलना' : 'Affordable Medicine Finder & Jan Aushadhi Compare'}
             </h3>
             <p style={{ margin: '3px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
-              {hindi
-                ? 'ब्रांडेड दवा का नाम डालें और सरकारी जन औषधि केंद्र की सस्ती दवा का दाम देखें (अप टू 80% बचत)'
-                : 'Type any brand (Augmentin, Pan-D, Allegra, Shelcal, etc.) to check generic Jan Aushadhi price'}
+              {hindi ? 'सस्ती दवा खोजक — दवा का नाम डालें और सस्ता विकल्प देखें' : 'Sasti Dawa Finder — Enter any medicine to find a cheaper alternative'}
             </p>
           </div>
         </div>
@@ -374,10 +372,10 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                     textTransform: 'uppercase',
                   }}
                 >
-                  {hindi ? 'सरकारी जन औषधि जेनेरिक विकल्प' : 'PMBJP Jan Aushadhi Generic Match'}
+                  {hindi ? 'दवा की पूरी जानकारी' : 'Medicine Details'}
                 </span>
                 <h4 style={{ margin: '6px 0 2px', fontSize: '1.4rem', fontWeight: 800, color: '#0f172a' }}>
-                  {resolved.janAushadhiName}
+                  {resolved.brand}
                 </h4>
                 <p style={{ margin: 0, fontSize: '1rem', color: '#047857', fontWeight: 600 }}>
                   <strong>{hindi ? 'सक्रिय साल्ट (Active Salt): ' : 'Active Salt: '}</strong>
@@ -439,7 +437,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 </small>
               </div>
 
-              {/* Jan Aushadhi Government Price */}
+              {/* Cheaper Alternative Medicine */}
               <div
                 style={{
                   background: '#ecfdf5',
@@ -449,8 +447,11 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 }}
               >
                 <span style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>
-                  {hindi ? 'जन औषधि केंद्र की सरकारी कीमत' : 'Jan Aushadhi Kendra Price'}
+                  {hindi ? '💊 सस्ती दवा (Same Salt, Cheaper Brand)' : '💊 Cheaper Alternative (Same Salt)'}
                 </span>
+                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
+                  {resolved.janAushadhiName}
+                </div>
                 <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#065f46', marginTop: '4px' }}>
                   ₹{resolved.genericPrice.toFixed(2)}
                 </div>
@@ -466,12 +467,8 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                     marginTop: '4px',
                   }}
                 >
-                  {hindi ? `सीधी बचत ~${resolved.savingsPercent}%` : `Save ~${resolved.savingsPercent}% OFF!`}
+                  {hindi ? `बचत ~${resolved.savingsPercent}%` : `Save ~${resolved.savingsPercent}%`}
                 </span>
-                <div style={{ marginTop: '6px', fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>
-                  <Pill size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: '4px' }} />
-                  {hindi ? 'जेनेरिक दवा: ' : 'Generic: '}{resolved.janAushadhiName}
-                </div>
               </div>
             </div>
 
@@ -510,7 +507,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
             {/* 1-Click Google Maps Locator Button */}
             <button
               onClick={() =>
-                window.open('https://www.google.com/maps/search/Jan+Aushadhi+Kendra+near+me', '_blank')
+                window.open('https://www.google.com/maps/search/medical+store+pharmacy+near+me', '_blank')
               }
               type="button"
               style={{
@@ -531,7 +528,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
               }}
             >
               <MapPin size={20} />
-              {hindi ? '📍 नज़दीकी जन औषधि केंद्र खोजें (Google Maps)' : '📍 Find Nearest Jan Aushadhi Kendra (Google Maps)'}
+              {hindi ? '📍 नज़दीकी मेडिकल स्टोर खोजें (Google Maps)' : '📍 Find Nearest Medical Store (Google Maps)'}
             </button>
           </div>
         </div>

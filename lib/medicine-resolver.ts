@@ -590,13 +590,13 @@ export async function resolveMedicine(query: string): Promise<ResolvedMedicine |
   const geminiKey = process.env.GEMINI_API_KEY;
   if (geminiKey) {
     try {
-      const geminiPrompt = `You are a clinical pharmacologist and Indian Jan Aushadhi (PMBJP) specialist.
+      const geminiPrompt = `You are an expert Indian pharmacist who knows every medicine brand sold in India.
 Resolve this medicine query: "${query}".
 
 CRITICAL PRICING RULES:
 - ALL prices MUST be in Indian Rupees (₹) as plain NUMBERS (not strings, not dollars).
-- brandPrice = realistic Indian pharmacy MRP in ₹ (e.g. 120, 250, 45).
-- genericPrice = equivalent PMBJP Jan Aushadhi generic price in ₹, typically 70-85% cheaper.
+- brandPrice = the searched medicine's actual Indian pharmacy MRP in ₹.
+- cheaperPrice = MRP of a REAL cheaper alternative brand (same salt, same form, same strength) available in Indian pharmacies.
 - NEVER use "$" or "USD". This is an Indian pharmacy app.
 
 IMPORTANT: If the query is NOT a real medicine, drug, or pharmaceutical product, return ONLY: {"notFound": true}
@@ -604,13 +604,13 @@ Do NOT make up fake medicine data for random words or gibberish.
 
 If it IS a real medicine, return ONLY a valid JSON object matching this schema:
 {
-  "brand": string (Clean brand or generic name),
-  "salt": string (Exact chemical salt name(s)),
+  "brand": string (The searched medicine brand name as sold in India),
+  "salt": string (Exact chemical salt/active ingredient name(s)),
   "strength": string (Common strength, e.g. "0.5% w/v", "500 mg", "10 ml"),
   "form": string (One of: "tablet", "capsule", "eye drop", "ear drop", "nasal spray", "syrup", "cream", "gel", "ointment", "inhaler", "injection"),
-  "brandPrice": number (Indian Rupees ₹ MRP as integer, e.g. 150),
-  "genericPrice": number (Indian Rupees ₹ Jan Aushadhi price as integer, e.g. 30),
-  "janAushadhiName": string (Official PMBJP generic formulation title),
+  "brandPrice": number (This medicine's Indian MRP in ₹ as integer),
+  "cheaperBrand": string (Name of a REAL, SPECIFIC cheaper alternative medicine brand sold in Indian pharmacies with the SAME salt composition. e.g. if query is "Augmentin 625", cheaperBrand could be "Moxikind-CV 625". Must be a real product name, NOT a generic salt name.),
+  "cheaperPrice": number (MRP of the cheaper alternative in ₹ as integer),
   "purposeEn": string (Concise clinical usage in English),
   "purposeHi": string (Concise clinical usage in Hindi),
   "timingEn": string (How and when to administer in English),
@@ -646,8 +646,8 @@ If it IS a real medicine, return ONLY a valid JSON object matching this schema:
           }
           if (parsed.brand && parsed.salt) {
             const bPrice = Number(parsed.brandPrice) || 120;
-            const gPrice = Number(parsed.genericPrice) || Math.round(bPrice * 0.22);
-            const savings = Math.max(50, Math.min(90, Math.round(((bPrice - gPrice) / bPrice) * 100)));
+            const cPrice = Number(parsed.cheaperPrice) || Number(parsed.genericPrice) || Math.round(bPrice * 0.4);
+            const savings = Math.max(10, Math.min(90, Math.round(((bPrice - cPrice) / bPrice) * 100)));
             return {
               query,
               matchedName: String(parsed.brand).toUpperCase(),
@@ -657,10 +657,10 @@ If it IS a real medicine, return ONLY a valid JSON object matching this schema:
               form: String(parsed.form || 'tablet'),
               manufacturer: 'Indian Branded Market (CDSCO Registered)',
               brandPrice: bPrice,
-              genericPrice: gPrice,
+              genericPrice: cPrice,
               savingsPercent: savings,
-              janAushadhiName: String(parsed.janAushadhiName || `${parsed.salt} - PMBJP Generic`),
-              janAushadhiCode: 'PMBJP-GEMINI',
+              janAushadhiName: String(parsed.cheaperBrand || parsed.janAushadhiName || `${parsed.salt} Generic`),
+              janAushadhiCode: 'GEMINI-ALT',
               purpose: {
                 en: String(parsed.purposeEn || `Prescribed for therapeutic clinical care.`),
                 hi: String(parsed.purposeHi || `चिकित्सीय उपचार के लिए निर्धारित।`),
