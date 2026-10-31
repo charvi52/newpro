@@ -565,12 +565,14 @@ export async function resolveMedicine(query: string): Promise<ResolvedMedicine |
       const geminiPrompt = `You are an expert Indian clinical pharmacist.
 Search and resolve this exact medicine: "${query}".
 
-STRICT VALIDATION:
+STRICT VALIDATION & ACCURATE PRICING:
 1. If "${query}" is NOT a genuine, recognized medicine, brand, drug, or salt (e.g. typos, random letters, non-pharmaceutical words), return ONLY: {"notFound": true}
 2. If it IS a genuine medicine:
-   - Identify the exact active chemical salt and strength.
-   - Look up a REAL, SPECIFIC cheaper alternative brand sold in Indian pharmacies with the exact same salt and form (e.g. Augmentin 625 -> Moxikind-CV 625, Calpol -> Pacimol, Pantocid -> Pan-D).
-   - All prices must be realistic Indian Rupees (₹) as plain numbers.
+   - Identify the exact active chemical salt and strength (note: DS stands for Double Strength e.g. Mefkind-DS suspension is 100mg/5ml or 250mg 60ml with retail MRP ~₹60-65).
+   - "brandPrice": Provide the EXACT current retail market MRP in Indian Rupees (₹) as listed on 1mg, Pharmeasy, or Apollo Pharmacy (e.g. Mefkind-DS 60ml suspension is ₹61).
+   - "cheaperBrand": Look up a REAL, SPECIFIC cheaper alternative brand sold in Indian pharmacies with the exact same salt composition, strength, and form.
+   - "cheaperPrice": The real retail MRP of the cheaper alternative in ₹. Must be lower than brandPrice.
+   - All prices must be realistic Indian Rupees (₹) as numbers.
 
 Return ONLY a valid JSON object matching:
 {
