@@ -586,7 +586,101 @@ export async function resolveMedicine(query: string): Promise<ResolvedMedicine> 
     }
   }
 
-  // 2. Online AI Pharmacopoeia: If OpenAI API key is configured, resolve any worldwide medicine
+  // 2. Online AI Pharmacopoeia: Google Gemini API (Primary free provider) or OpenAI
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      const geminiPrompt = `You are a clinical pharmacologist and Indian Jan Aushadhi (PMBJP) specialist.
+Resolve this medicine query: "${query}".
+
+CRITICAL PRICING RULES:
+- ALL prices MUST be in Indian Rupees (₹) as plain NUMBERS (not strings, not dollars).
+- brandPrice = realistic Indian pharmacy MRP in ₹ (e.g. 120, 250, 45).
+- genericPrice = equivalent PMBJP Jan Aushadhi generic price in ₹, typically 70-85% cheaper.
+- NEVER use "$" or "USD". This is an Indian pharmacy app.
+
+Return ONLY a valid JSON object matching this schema:
+{
+  "brand": string (Clean brand or generic name),
+  "salt": string (Exact chemical salt name(s)),
+  "strength": string (Common strength, e.g. "0.5% w/v", "500 mg", "10 ml"),
+  "form": string (One of: "tablet", "capsule", "eye drop", "ear drop", "nasal spray", "syrup", "cream", "gel", "ointment", "inhaler", "injection"),
+  "brandPrice": number (Indian Rupees ₹ MRP as integer, e.g. 150),
+  "genericPrice": number (Indian Rupees ₹ Jan Aushadhi price as integer, e.g. 30),
+  "janAushadhiName": string (Official PMBJP generic formulation title),
+  "purposeEn": string (Concise clinical usage in English),
+  "purposeHi": string (Concise clinical usage in Hindi),
+  "timingEn": string (How and when to administer in English),
+  "timingHi": string (How and when to administer in Hindi),
+  "precautionEn": string (Key safety warning in English),
+  "precautionHi": string (Key safety warning in Hindi)
+}`;
+
+      const geminiModel = process.env.GEMINI_MODEL || 'gemini-3.5-flash';
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: geminiPrompt }] }],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              temperature: 0.2,
+            },
+          }),
+          signal: AbortSignal.timeout(20000),
+        }
+      );
+
+      if (geminiRes.ok) {
+        const json = await geminiRes.json() as any;
+        const textContent = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (textContent) {
+          const parsed = JSON.parse(textContent);
+          if (parsed.brand && parsed.salt) {
+            const bPrice = Number(parsed.brandPrice) || 120;
+            const gPrice = Number(parsed.genericPrice) || Math.round(bPrice * 0.22);
+            const savings = Math.max(50, Math.min(90, Math.round(((bPrice - gPrice) / bPrice) * 100)));
+            return {
+              query,
+              matchedName: String(parsed.brand).toUpperCase(),
+              brand: String(parsed.brand).toUpperCase(),
+              salt: String(parsed.salt),
+              strength: String(parsed.strength || 'Standard therapeutic dose'),
+              form: String(parsed.form || 'tablet'),
+              manufacturer: 'Indian Branded Market (CDSCO Registered)',
+              brandPrice: bPrice,
+              genericPrice: gPrice,
+              savingsPercent: savings,
+              janAushadhiName: String(parsed.janAushadhiName || `${parsed.salt} - PMBJP Generic`),
+              janAushadhiCode: 'PMBJP-GEMINI',
+              purpose: {
+                en: String(parsed.purposeEn || `Prescribed for therapeutic clinical care.`),
+                hi: String(parsed.purposeHi || `चिकित्सीय उपचार के लिए निर्धारित।`),
+              },
+              timing: {
+                en: String(parsed.timingEn || `Administer as directed on package or by doctor.`),
+                hi: String(parsed.timingHi || `पैक पर दिए निर्देश या डॉक्टर की सलाह अनुसार लें।`),
+              },
+              precaution: {
+                en: String(parsed.precautionEn || `Consult your physician or pharmacist before use.`),
+                hi: String(parsed.precautionHi || `उपयोग से पहले डॉक्टर या फार्मासिस्ट से परामर्श लें।`),
+              },
+              source: 'Google Gemini AI Live Pharmacopoeia + PMBJP Price Schedule',
+              sourceUrl: 'https://janaushadhi.gov.in/',
+            };
+          }
+        }
+      } else {
+        // Non-OK Gemini response — fall through to next tier
+      }
+    } catch {
+      // Gemini timeout or network error — fall through to OpenAI / public APIs
+    }
+  }
+
+  // 3. Online AI Pharmacopoeia: OpenAI (if configured)
   if (process.env.OPENAI_API_KEY) {
     try {
       const aiPrompt = `You are a clinical pharmacologist and Indian Jan Aushadhi (PMBJP) specialist.
