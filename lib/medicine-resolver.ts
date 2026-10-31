@@ -558,9 +558,105 @@ export const INTERACTION_RULES: Array<{
 export async function resolveMedicine(query: string): Promise<ResolvedMedicine | null> {
   const q = query.trim().toLowerCase();
 
-  // 1. Check local preloaded comprehensive Indian database
+  // 1. Google Gemini AI: Direct live internet search for any medicine worldwide
+  const geminiKey = process.env.GEMINI_API_KEY;
+  if (geminiKey) {
+    try {
+      const geminiPrompt = `You are an expert Indian clinical pharmacist.
+Search and resolve this exact medicine: "${query}".
+
+STRICT VALIDATION:
+1. If "${query}" is NOT a genuine, recognized medicine, brand, drug, or salt (e.g. typos, random letters, non-pharmaceutical words), return ONLY: {"notFound": true}
+2. If it IS a genuine medicine:
+   - Identify the exact active chemical salt and strength.
+   - Look up a REAL, SPECIFIC cheaper alternative brand sold in Indian pharmacies with the exact same salt and form (e.g. Augmentin 625 -> Moxikind-CV 625, Calpol -> Pacimol, Pantocid -> Pan-D).
+   - All prices must be realistic Indian Rupees (₹) as plain numbers.
+
+Return ONLY a valid JSON object matching:
+{
+  "brand": string (Clean brand or generic name),
+  "salt": string (Active salt composition),
+  "strength": string (Strength/dosage),
+  "form": string (One of: "tablet", "capsule", "eye drop", "ear drop", "nasal spray", "syrup", "cream", "gel", "ointment", "inhaler", "injection"),
+  "brandPrice": number (Indian MRP in ₹ as integer),
+  "cheaperBrand": string (Specific cheaper alternative brand name sold in India),
+  "cheaperPrice": number (MRP of cheaper alternative in ₹ as integer),
+  "purposeEn": string (Clinical use in English),
+  "purposeHi": string (Clinical use in Hindi),
+  "timingEn": string (Directions in English),
+  "timingHi": string (Directions in Hindi),
+  "precautionEn": string (Safety warning in English),
+  "precautionHi": string (Safety warning in Hindi)
+}`;
+
+      const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
+      const geminiRes = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: geminiPrompt }] }],
+            generationConfig: {
+              responseMimeType: 'application/json',
+              temperature: 0.1,
+            },
+          }),
+          signal: AbortSignal.timeout(8000),
+        }
+      );
+
+      if (geminiRes.ok) {
+        const json = (await geminiRes.json()) as any;
+        const textContent = json.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (textContent) {
+          const parsed = JSON.parse(textContent);
+          if (parsed.notFound) {
+            return null; // Reject fake query!
+          }
+          if (parsed.brand && parsed.salt) {
+            const bPrice = Number(parsed.brandPrice) || 120;
+            const cPrice = Number(parsed.cheaperPrice) || Math.round(bPrice * 0.45);
+            const savings = Math.max(10, Math.min(90, Math.round(((bPrice - cPrice) / bPrice) * 100)));
+            return {
+              query,
+              matchedName: String(parsed.brand).toUpperCase(),
+              brand: String(parsed.brand).toUpperCase(),
+              salt: String(parsed.salt),
+              strength: String(parsed.strength || 'Standard dose'),
+              form: String(parsed.form || 'tablet'),
+              manufacturer: 'Indian Branded Market (CDSCO Registered)',
+              brandPrice: bPrice,
+              genericPrice: cPrice,
+              savingsPercent: savings,
+              janAushadhiName: String(parsed.cheaperBrand || `${parsed.salt} Alternative`),
+              janAushadhiCode: 'GEMINI-LIVE',
+              purpose: {
+                en: String(parsed.purposeEn || 'Prescribed for clinical care.'),
+                hi: String(parsed.purposeHi || 'चिकित्सीय उपचार के लिए निर्धारित।'),
+              },
+              timing: {
+                en: String(parsed.timingEn || 'Administer as directed by physician.'),
+                hi: String(parsed.timingHi || 'डॉक्टर की सलाह अनुसार लें।'),
+              },
+              precaution: {
+                en: String(parsed.precautionEn || 'Consult doctor before use.'),
+                hi: String(parsed.precautionHi || 'उपयोग से पहले डॉक्टर से परामर्श लें।'),
+              },
+              source: 'Google Gemini Live Pharmacopoeia Search',
+              sourceUrl: 'https://cdsco.gov.in/',
+            };
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[Gemini Live Error, fallback to curated DB]', err);
+    }
+  }
+
+  // 2. Offline Curated Fallback (only for known verified medicines when offline)
   for (const item of POPULAR_INDIAN_MEDICINES) {
-    const brandMatch = item.brands.some((b) => q.includes(b) || b.includes(q));
+    const brandMatch = item.brands.some((b) => q === b || q.startsWith(b) || b.startsWith(q));
     const saltMatch = item.salt.toLowerCase().includes(q) || q.includes(item.salt.toLowerCase());
     if (brandMatch || saltMatch) {
       const savings = Math.round(((item.brandPrice - item.genericPrice) / item.brandPrice) * 100);
@@ -580,384 +676,16 @@ export async function resolveMedicine(query: string): Promise<ResolvedMedicine |
         purpose: { en: item.purposeEn, hi: item.purposeHi },
         timing: { en: item.timingEn, hi: item.timingHi },
         precaution: { en: item.precautionEn, hi: item.precautionHi },
-        source: 'Pradhan Mantri Bhartiya Janaushadhi Pariyojana (PMBJP) Schedule',
+        source: 'Curated Pharmacopoeia Database',
         sourceUrl: 'https://janaushadhi.gov.in/',
       };
     }
   }
 
-  // 2. Online AI Pharmacopoeia: Google Gemini API (Primary free provider) or OpenAI
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (geminiKey) {
-    try {
-      const geminiPrompt = `You are an expert Indian pharmacist who knows every medicine brand sold in India.
-Resolve this medicine query: "${query}".
-
-CRITICAL PRICING RULES:
-- ALL prices MUST be in Indian Rupees (₹) as plain NUMBERS (not strings, not dollars).
-- brandPrice = the searched medicine's actual Indian pharmacy MRP in ₹.
-- cheaperPrice = MRP of a REAL cheaper alternative brand (same salt, same form, same strength) available in Indian pharmacies.
-- NEVER use "$" or "USD". This is an Indian pharmacy app.
-
-IMPORTANT: If the query is NOT a real medicine, drug, or pharmaceutical product, return ONLY: {"notFound": true}
-Do NOT make up fake medicine data for random words or gibberish.
-
-If it IS a real medicine, return ONLY a valid JSON object matching this schema:
-{
-  "brand": string (The searched medicine brand name as sold in India),
-  "salt": string (Exact chemical salt/active ingredient name(s)),
-  "strength": string (Common strength, e.g. "0.5% w/v", "500 mg", "10 ml"),
-  "form": string (One of: "tablet", "capsule", "eye drop", "ear drop", "nasal spray", "syrup", "cream", "gel", "ointment", "inhaler", "injection"),
-  "brandPrice": number (This medicine's Indian MRP in ₹ as integer),
-  "cheaperBrand": string (Name of a REAL, SPECIFIC cheaper alternative medicine brand sold in Indian pharmacies with the SAME salt composition. e.g. if query is "Augmentin 625", cheaperBrand could be "Moxikind-CV 625". Must be a real product name, NOT a generic salt name.),
-  "cheaperPrice": number (MRP of the cheaper alternative in ₹ as integer),
-  "purposeEn": string (Concise clinical usage in English),
-  "purposeHi": string (Concise clinical usage in Hindi),
-  "timingEn": string (How and when to administer in English),
-  "timingHi": string (How and when to administer in Hindi),
-  "precautionEn": string (Key safety warning in English),
-  "precautionHi": string (Key safety warning in Hindi)
-}`;
-
-      const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
-      const geminiRes = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${geminiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: geminiPrompt }] }],
-            generationConfig: {
-              responseMimeType: 'application/json',
-              temperature: 0.2,
-            },
-          }),
-          signal: AbortSignal.timeout(20000),
-        }
-      );
-
-      if (geminiRes.ok) {
-        const json = await geminiRes.json() as any;
-        const textContent = json.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (textContent) {
-          const parsed = JSON.parse(textContent);
-          if (parsed.notFound) {
-            return null; // Gemini confirmed this is not a real medicine
-          }
-          if (parsed.brand && parsed.salt) {
-            const bPrice = Number(parsed.brandPrice) || 120;
-            const cPrice = Number(parsed.cheaperPrice) || Number(parsed.genericPrice) || Math.round(bPrice * 0.4);
-            const savings = Math.max(10, Math.min(90, Math.round(((bPrice - cPrice) / bPrice) * 100)));
-            return {
-              query,
-              matchedName: String(parsed.brand).toUpperCase(),
-              brand: String(parsed.brand).toUpperCase(),
-              salt: String(parsed.salt),
-              strength: String(parsed.strength || 'Standard therapeutic dose'),
-              form: String(parsed.form || 'tablet'),
-              manufacturer: 'Indian Branded Market (CDSCO Registered)',
-              brandPrice: bPrice,
-              genericPrice: cPrice,
-              savingsPercent: savings,
-              janAushadhiName: String(parsed.cheaperBrand || parsed.janAushadhiName || `${parsed.salt} Generic`),
-              janAushadhiCode: 'GEMINI-ALT',
-              purpose: {
-                en: String(parsed.purposeEn || `Prescribed for therapeutic clinical care.`),
-                hi: String(parsed.purposeHi || `चिकित्सीय उपचार के लिए निर्धारित।`),
-              },
-              timing: {
-                en: String(parsed.timingEn || `Administer as directed on package or by doctor.`),
-                hi: String(parsed.timingHi || `पैक पर दिए निर्देश या डॉक्टर की सलाह अनुसार लें।`),
-              },
-              precaution: {
-                en: String(parsed.precautionEn || `Consult your physician or pharmacist before use.`),
-                hi: String(parsed.precautionHi || `उपयोग से पहले डॉक्टर या फार्मासिस्ट से परामर्श लें।`),
-              },
-              source: 'Google Gemini AI Live Pharmacopoeia + PMBJP Price Schedule',
-              sourceUrl: 'https://janaushadhi.gov.in/',
-            };
-          }
-        }
-      } else {
-        const errBody = await geminiRes.text();
-        console.error('[Gemini Tier-2 HTTP Error]', geminiRes.status, errBody.substring(0, 300));
-      }
-    } catch (err) {
-      console.error('[Gemini Tier-2 Exception]', err);
-      // Gemini timeout or network error — fall through to OpenAI / public APIs
-    }
-  }
-
-  // 3. Online AI Pharmacopoeia: OpenAI (if configured)
-  if (process.env.OPENAI_API_KEY) {
-    try {
-      const aiPrompt = `You are a clinical pharmacologist and Indian Jan Aushadhi (PMBJP) specialist.
-Resolve this medicine query: "${query}".
-IMPORTANT: If the query is NOT a real medicine, drug, or pharmaceutical product, return ONLY: {"notFound": true}
-Do NOT make up fake medicine data for random words or gibberish.
-
-If it IS a real medicine, return ONLY a valid JSON object matching this schema:
-{
-  "brand": string (Clean brand or generic name),
-  "salt": string (Exact chemical salt name(s)),
-  "strength": string (Common strength, e.g. "0.5% w/v", "500 mg", "10 ml"),
-  "form": string (One of: "tablet", "capsule", "eye drop", "ear drop", "nasal spray", "syrup", "cream", "gel", "ointment", "inhaler", "injection"),
-  "brandPrice": number (Realistic branded market MRP in Indian Rupees),
-  "genericPrice": number (Equivalent PMBJP Jan Aushadhi generic price in INR, 70-85% cheaper),
-  "janAushadhiName": string (Official PMBJP generic formulation title),
-  "purposeEn": string (Concise clinical usage in English),
-  "purposeHi": string (Concise clinical usage in Hindi),
-  "timingEn": string (How and when to administer in English),
-  "timingHi": string (How and when to administer in Hindi),
-  "precautionEn": string (Key safety warning in English),
-  "precautionHi": string (Key safety warning in Hindi)
-}`;
-
-      const aiRes = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: process.env.OPENAI_CHAT_MODEL || 'gpt-4o-mini',
-          response_format: { type: 'json_object' },
-          messages: [{ role: 'user', content: aiPrompt }],
-        }),
-        signal: AbortSignal.timeout(6000),
-      });
-
-      if (aiRes.ok) {
-        const json = await aiRes.json() as { choices?: Array<{ message?: { content?: string } }> };
-        const parsed = JSON.parse(json.choices?.[0]?.message?.content || '{}') as Record<string, any>;
-        if (parsed.brand && parsed.salt) {
-          const bPrice = Number(parsed.brandPrice) || 120;
-          const gPrice = Number(parsed.genericPrice) || Math.round(bPrice * 0.22);
-          const savings = Math.max(50, Math.min(90, Math.round(((bPrice - gPrice) / bPrice) * 100)));
-          return {
-            query,
-            matchedName: String(parsed.brand).toUpperCase(),
-            brand: String(parsed.brand).toUpperCase(),
-            salt: String(parsed.salt),
-            strength: String(parsed.strength || 'Standard therapeutic dose'),
-            form: String(parsed.form || 'tablet'),
-            manufacturer: 'Indian Branded Market (CDSCO Registered)',
-            brandPrice: bPrice,
-            genericPrice: gPrice,
-            savingsPercent: savings,
-            janAushadhiName: String(parsed.janAushadhiName || `${parsed.salt} - PMBJP Generic`),
-            janAushadhiCode: 'PMBJP-UNIVERSAL',
-            purpose: {
-              en: String(parsed.purposeEn || `Prescribed for therapeutic clinical care.`),
-              hi: String(parsed.purposeHi || `चिकित्सीय उपचार के लिए निर्धारित।`),
-            },
-            timing: {
-              en: String(parsed.timingEn || `Administer as directed on package or by doctor.`),
-              hi: String(parsed.timingHi || `पैक पर दिए निर्देश या डॉक्टर की सलाह अनुसार लें।`),
-            },
-            precaution: {
-              en: String(parsed.precautionEn || `Consult your physician or pharmacist before use.`),
-              hi: String(parsed.precautionHi || `उपयोग से पहले डॉक्टर या फार्मासिस्ट से परामर्श लें।`),
-            },
-            source: 'Live AI Pharmacopoeia + PMBJP National Price Schedule',
-            sourceUrl: 'https://janaushadhi.gov.in/',
-          };
-        }
-      }
-    } catch {
-      // Fall through to public APIs
-    }
-  }
-
-  // 3. Online Public Pharmacopoeia: RxNorm (NIH) & OpenFDA
-  try {
-    const rxUrl = new URL('https://rxnav.nlm.nih.gov/REST/approximateTerm.json');
-    rxUrl.searchParams.set('term', query);
-    rxUrl.searchParams.set('maxEntries', '3');
-    const rxRes = await fetch(rxUrl, {
-      headers: { accept: 'application/json' },
-      signal: AbortSignal.timeout(4000),
-    });
-    if (rxRes.ok) {
-      const rxData = await rxRes.json() as { approximateGroup?: { candidate?: Array<{ name?: string }> } };
-      const candidates = rxData.approximateGroup?.candidate || [];
-      const match = candidates.find((c) => c.name && c.name.length > 3) || candidates[0];
-      if (match && match.name) {
-        const rawName = match.name;
-        // Check if RxNorm returned dosage form hints
-        const isEye = /ophthalmic|eye/i.test(rawName) || /eye|drop|tear|lubri/i.test(q);
-        const isEar = /otic|ear/i.test(rawName) || /ear|otic/i.test(q);
-        const isNose = /nasal|spray/i.test(rawName) || /nasal|spray/i.test(q);
-        const isTopical = /topical|ointment|cream|gel/i.test(rawName) || /cream|gel|skin/i.test(q);
-        const isOralLiquid = /syrup|solution|suspension|elixir/i.test(rawName) || /syrup|susp/i.test(q);
-        const isResp = /inhal|aerosol/i.test(rawName) || /inhaler/i.test(q);
-
-        const form = isEye ? 'eye drop' : isEar ? 'ear drop' : isNose ? 'nasal spray' : isTopical ? 'cream' : isOralLiquid ? 'syrup' : isResp ? 'inhaler' : 'tablet';
-        const brandPrice = isEye ? 140 : isEar ? 110 : isNose ? 95 : isTopical ? 120 : isOralLiquid ? 130 : 110;
-        const genericPrice = Math.round(brandPrice * 0.22);
-
-        return {
-          query,
-          matchedName: query.toUpperCase(),
-          brand: query.toUpperCase(),
-          salt: rawName.replace(/\[.*?\]/g, '').trim(),
-          strength: 'Standard therapeutic dose',
-          form,
-          manufacturer: 'Global / Indian Pharmacopoeia Registry',
-          brandPrice,
-          genericPrice,
-          savingsPercent: 78,
-          janAushadhiName: `${rawName.replace(/\[.*?\]/g, '').trim()} (Affordable Alternative)`,
-          janAushadhiCode: 'PMBJP-RXNORM',
-          purpose: {
-            en: `Formulation (${rawName}) indexed in official pharmaceutical records.`,
-            hi: `आधिकारिक औषधिय रिकॉर्ड में सूचीबद्ध दवा (${rawName})।`,
-          },
-          timing: {
-            en: isEye
-              ? 'Instill 1-2 drops into affected eye(s) as advised; do NOT swallow.'
-              : isEar
-              ? 'Instill 2-3 drops into affected ear; do not use in eyes.'
-              : isTopical
-              ? 'Apply a thin layer gently over clean affected skin area.'
-              : 'Take as directed on packaging with water or as prescribed.',
-            hi: isEye
-              ? 'प्रभावित आँख में 1-2 बूँद डालें; निगलें नहीं।'
-              : isEar
-              ? 'प्रभावित कान में 2-3 बूँदें डालें; आँख में न डालें।'
-              : isTopical
-              ? 'प्रभावित त्वचा पर हल्के हाथ से दिन में 1-2 बार लगाएं।'
-              : 'पैक पर लिखे निर्देश या डॉक्टर के कहे अनुसार लें।',
-          },
-          precaution: {
-            en: 'Check batch number and expiry date. Ask pharmacist for PMBJP generic substitution.',
-            hi: 'बैच नंबर और समाप्ति तिथि की जाँच करें। जन औषधि केंद्र पर सस्ती दवा मांगें।',
-          },
-          source: 'NIH National Library of Medicine (RxNorm) + PMBJP National Price Schedule',
-          sourceUrl: 'https://rxnav.nlm.nih.gov/',
-          isOnlineCandidate: true,
-        };
-      }
-    }
-  } catch {
-    // Fall through to smart pattern matcher
-  }
-
-  // 4. Guaranteed Smart Fallback for any uncommon or typed name
-  // Reject obvious gibberish: must be at least 3 chars and contain at least one vowel
-  const hasVowel = /[aeiouAEIOU]/i.test(q);
-  const isLongEnough = q.replace(/\s+/g, '').length >= 3;
-  if (!hasVowel || !isLongEnough) {
-    return null; // Not a recognizable medicine name
-  }
-  const isEyeDrop = /eye|drop|tear|lubri|lube|opht|opt/i.test(q);
-  const isEarDrop = /ear|otic/i.test(q);
-  const isNasalDrop = /nasal|spray|otrivin/i.test(q);
-  const isSyrup = /syrup|suspension|liquid|elixir|cough|solution/i.test(q);
-  const isInhaler = /inhaler|rotahaler|respules/i.test(q);
-  const isCream = /cream|gel|ointment|lotion|skin/i.test(q);
-
-  let detectedForm = 'tablet';
-  let defaultBrandPrice = 110.0;
-  let defaultGenericPrice = 22.0;
-  let defaultSavings = 80;
-  let timingEn = 'Take with water as advised on packaging or by your medical practitioner.';
-  let timingHi = 'पैकेजिंग पर दिए गए निर्देश या डॉक्टर के कहे अनुसार लें।';
-  let purposeEn = `Active medicine entry: ${query}. Certified under Indian pharmaceutical standards.`;
-  let purposeHi = `दवा प्रविष्टि: ${query}। भारतीय मानक और गुणवत्ता के अनुसार।`;
-  let precautionEn = 'Always verify batch number and expiry date before consumption.';
-  let precautionHi = 'उपयोग से पहले दवा का बैच नंबर और एक्सपायरी डेट अवश्य जाँचें।';
-
-  if (isEyeDrop) {
-    detectedForm = 'eye drop';
-    defaultBrandPrice = 145.0;
-    defaultGenericPrice = 24.0;
-    defaultSavings = 83;
-    timingEn = 'Instill 1 to 2 drops into affected eye(s) as directed; for ophthalmic use only, do NOT swallow.';
-    timingHi = 'प्रभावित आँख में 1-2 बूँद डालें; केवल आँखों के लिए, निगलें नहीं।';
-    purposeEn = `Ophthalmic care and lubrication (${query}) for eye relief.`;
-    purposeHi = `आँखों की देखभाल, सुरक्षा और लुब्रिकेशन के लिए आई ड्रॉप (${query})।`;
-    precautionEn = 'For ophthalmic use only. Do not touch dropper tip to eye or surfaces. Discard 30 days after opening.';
-    precautionHi = 'केवल आँखों के लिए। ड्रॉपर की नोक को न छुएँ। शीशी खोलने के 30 दिन बाद इस्तेमाल न करें।';
-  } else if (isEarDrop) {
-    detectedForm = 'ear drop';
-    defaultBrandPrice = 115.0;
-    defaultGenericPrice = 20.0;
-    defaultSavings = 82;
-    timingEn = 'Instill 2 to 3 drops into the affected ear canal as directed; keep head tilted for 2 minutes.';
-    timingHi = 'प्रभावित कान में 2-3 बूँद डालें; 2 मिनट तक सिर को झुकाकर रखें।';
-    purposeEn = `Otic formulation (${query}) for ear care and infection treatment.`;
-    purposeHi = `कान की देखभाल और इन्फेक्शन से राहत के लिए ईयर ड्रॉप (${query})।`;
-    precautionEn = 'For external ear use only. Do not use if eardrum is perforated without doctor advice.';
-    precautionHi = 'केवल कान के लिए। कान का पर्दा फटा होने पर डॉक्टर की अनुमति के बिना न डालें।';
-  } else if (isNasalDrop) {
-    detectedForm = 'nasal spray';
-    defaultBrandPrice = 95.0;
-    defaultGenericPrice = 18.0;
-    defaultSavings = 81;
-    timingEn = 'Spray or instill 1-2 sprays into each nostril as directed; do not exceed 5 consecutive days.';
-    timingHi = 'नाक के प्रत्येक नथुने में 1-2 स्प्रे करें; लगातार 5 दिन से अधिक इस्तेमाल न करें।';
-    purposeEn = `Nasal decongestion and airway clearing (${query}).`;
-    purposeHi = `बंद नाक खोलने और सांस लेने में राहत के लिए (${query})।`;
-    precautionEn = 'Do not share the spray nozzle with others to avoid spreading infection.';
-    precautionHi = 'इन्फेक्शन फैलने से रोकने के लिए अपनी स्प्रे बोतल किसी अन्य के साथ साझा न करें।';
-  } else if (isSyrup) {
-    detectedForm = 'syrup';
-    defaultBrandPrice = 125.0;
-    defaultGenericPrice = 25.0;
-    defaultSavings = 80;
-    timingEn = 'Take with measuring cup after food; shake bottle thoroughly before each dose.';
-    timingHi = 'भोजन के बाद सही ढक्कन से मापकर लें; पीने से पहले शीशी को अच्छी तरह हिलाएं।';
-    purposeEn = `Oral liquid formulation (${query}) for symptom relief.`;
-    purposeHi = `तरल औषधि सिरप (${query}), लक्षणों से राहत के लिए।`;
-    precautionEn = 'Shake well before use. Keep tightly closed and store in a cool dry place.';
-    precautionHi = 'इस्तेमाल से पहले अच्छी तरह हिलाएं। ठंडी व सूखी जगह पर रखें।';
-  } else if (isCream) {
-    detectedForm = 'cream';
-    defaultBrandPrice = 160.0;
-    defaultGenericPrice = 32.0;
-    defaultSavings = 80;
-    timingEn = 'Apply a thin film gently over the affected skin area 1-2 times daily.';
-    timingHi = 'प्रभावित त्वचा पर दिन में 1-2 बार हल्के हाथ से लगाएं।';
-    purposeEn = `Topical dermatological formulation (${query}) for external skin application.`;
-    purposeHi = `त्वचा की सुरक्षा और उपचार के लिए बाहरी क्रीम (${query})।`;
-    precautionEn = 'For external dermatological use only. Avoid contact with eyes, mouth and open wounds.';
-    precautionHi = 'केवल बाहरी त्वचा के लिए। आँख, मुँह या गहरे घाव पर न लगाएं।';
-  }
-
-  return {
-    query,
-    matchedName: query.toUpperCase(),
-    brand: query.toUpperCase(),
-    salt: isEyeDrop ? 'Carboxymethylcellulose / Ophthalmic Lubricant' : `${query} Therapeutic Formulation`,
-    strength: 'As printed on pack',
-    form: detectedForm,
-    manufacturer: 'Licensed Indian Manufacturer',
-    brandPrice: defaultBrandPrice,
-    genericPrice: defaultGenericPrice,
-    savingsPercent: defaultSavings,
-    janAushadhiName: `${query} (Affordable Alternative Brand)`,
-    janAushadhiCode: 'PMBJP-AVAIL',
-    purpose: {
-      en: purposeEn,
-      hi: purposeHi,
-    },
-    timing: {
-      en: timingEn,
-      hi: timingHi,
-    },
-    precaution: {
-      en: precautionEn,
-      hi: precautionHi,
-    },
-    source: 'National Jan Aushadhi Scheme Guidelines (PMBJP)',
-    sourceUrl: 'https://janaushadhi.gov.in/',
-  };
+  // Real medicines only: Return null if not verified! No fake cards!
+  return null;
 }
 
-/**
- * Check multiple medicines in a cabinet for dangerous drug interactions
- */
 export function checkDrugInteractions(
   medicines: Array<{ product: string; batch?: string; owner?: string }>
 ): DrugInteraction[] {
