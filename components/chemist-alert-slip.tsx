@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { AlertOctagon, Download, FileText, Printer, ShieldAlert, X } from 'lucide-react';
+import { AlertOctagon, Printer, ShieldAlert, X } from 'lucide-react';
 
 export interface ChemistSlipData {
   product: string;
@@ -171,7 +171,7 @@ export default function ChemistAlertSlip({ data, onClose, hindi }: ChemistAlertS
               <span style={{ fontSize: '0.78rem', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 {hindi ? 'जांच प्रयोगशाला / स्रोत' : 'Testing Laboratory'}
               </span>
-              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>{data.laboratory || 'Government Drug Testing Laboratory'}</div>
+              <div style={{ fontWeight: 600, fontSize: '0.9rem', color: '#334155' }}>{data.laboratory || 'Not stated in the official record'}</div>
             </div>
 
             <div style={{ gridColumn: '1 / -1' }}>
@@ -179,7 +179,7 @@ export default function ChemistAlertSlip({ data, onClose, hindi }: ChemistAlertS
                 {hindi ? 'दोष का कारण (Lab Finding)' : 'Official Reason for Quality Failure'}
               </span>
               <div style={{ fontWeight: 700, fontSize: '0.92rem', color: '#991b1b', background: '#fee2e2', padding: '6px 10px', borderRadius: '6px', marginTop: '3px' }}>
-                {data.issue || 'Failed dissolution/assay specifications under official government analysis'}
+                {data.issue || 'Not stated in the official record'}
               </div>
             </div>
           </div>

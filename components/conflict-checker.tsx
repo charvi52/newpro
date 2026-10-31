@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, ShieldAlert, Sparkles } from 'lucide-react';
-import { checkDrugInteractions, type DrugInteraction } from '@/lib/medicine-resolver';
+import { CheckCircle2, ChevronDown, ChevronUp, ShieldAlert } from 'lucide-react';
+import { checkDrugInteractions } from '@/lib/medicine-resolver';
 import type { Medicine } from '@/lib/carely';
 
 interface ConflictCheckerProps {

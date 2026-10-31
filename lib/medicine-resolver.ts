@@ -557,6 +557,8 @@ export const INTERACTION_RULES: Array<{
  */
 export async function resolveMedicine(query: string): Promise<ResolvedMedicine | null> {
   const q = query.trim().toLowerCase();
+  // Free-text lookup on a curated brand list: too short a query Matches far too many entries.
+  if (q.length < 3) return null;
 
   // 1. Google Gemini AI: Direct live internet search for any medicine worldwide
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -609,17 +611,31 @@ Return ONLY a valid JSON object matching:
       );
 
       if (geminiRes.ok) {
-        const json = (await geminiRes.json()) as any;
+        const json = (await geminiRes.json()) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
         const textContent = json.candidates?.[0]?.content?.parts?.[0]?.text;
         if (textContent) {
-          const parsed = JSON.parse(textContent);
+          const parsed = JSON.parse(textContent) as {
+            notFound?: boolean;
+            brand?: string; salt?: string; strength?: string; form?: string;
+            brandPrice?: number; cheaperPrice?: number; cheaperBrand?: string;
+            purposeEn?: string; purposeHi?: string;
+            timingEn?: string; timingHi?: string;
+            precautionEn?: string; precautionHi?: string;
+          };
           if (parsed.notFound) {
             return null; // Reject fake query!
           }
           if (parsed.brand && parsed.salt) {
-            const bPrice = Number(parsed.brandPrice) || 120;
-            const cPrice = Number(parsed.cheaperPrice) || Math.round(bPrice * 0.45);
-            const savings = Math.max(10, Math.min(90, Math.round(((bPrice - cPrice) / bPrice) * 100)));
+            // Never invent prices: unusable or missing AI numbers fall back to the curated DB
+            // instead of showing fabricated MRPs or savings percentages.
+            const bPrice = Number(parsed.brandPrice);
+            const cPrice = Number(parsed.cheaperPrice);
+            if (!Number.isFinite(bPrice) || bPrice <= 0 || !Number.isFinite(cPrice) || cPrice <= 0 || cPrice > bPrice) {
+              throw new Error('Gemini returned unusable price data; using the curated database instead');
+            }
+            const savings = Math.round(((bPrice - cPrice) / bPrice) * 100);
             return {
               query,
               matchedName: String(parsed.brand).toUpperCase(),
@@ -646,7 +662,7 @@ Return ONLY a valid JSON object matching:
                 hi: String(parsed.precautionHi || 'उपयोग से पहले डॉक्टर से परामर्श लें।'),
               },
               source: 'Google Gemini Live Pharmacopoeia Search',
-              sourceUrl: 'https://cdsco.gov.in/',
+              sourceUrl: 'https://generativelanguage.google.com/',
             };
           }
         }
@@ -659,9 +675,9 @@ Return ONLY a valid JSON object matching:
   // 2. Offline Curated Fallback (only for known verified medicines when offline)
   for (const item of POPULAR_INDIAN_MEDICINES) {
     const brandMatch = item.brands.some((b) => q === b || q.startsWith(b) || b.startsWith(q));
-    const saltMatch = item.salt.toLowerCase().includes(q) || q.includes(item.salt.toLowerCase());
+    const saltMatch = q.length >= 4 && (item.salt.toLowerCase().includes(q) || q.includes(item.salt.toLowerCase()));
     if (brandMatch || saltMatch) {
-      const savings = Math.round(((item.brandPrice - item.genericPrice) / item.brandPrice) * 100);
+      const savings = Math.max(0, Math.round(((item.brandPrice - item.genericPrice) / item.brandPrice) * 100));
       return {
         query,
         matchedName: item.brands[0].toUpperCase(),
@@ -672,7 +688,7 @@ Return ONLY a valid JSON object matching:
         manufacturer: 'Indian Branded Market (CDSCO Registered)',
         brandPrice: item.brandPrice,
         genericPrice: item.genericPrice,
-        savingsPercent: savings > 0 ? savings : 70,
+        savingsPercent: savings,
         janAushadhiName: item.janAushadhiName,
         janAushadhiCode: item.janAushadhiCode,
         purpose: { en: item.purposeEn, hi: item.purposeHi },
@@ -751,7 +767,7 @@ export function evaluateExpiry(expiryStr?: string): ExpiryStatus {
   const year = parseInt(parts[0], 10);
   const month = parts.length > 1 ? parseInt(parts[1], 10) : 12;
 
-  if (isNaN(year)) {
+  if (isNaN(year) || year < 1900 || isNaN(month) || month < 1 || month > 12) {
     return {
       status: 'unknown',
       label: { en: 'Invalid Date', hi: 'अमान्य तारीख' },

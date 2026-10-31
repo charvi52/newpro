@@ -2,13 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import {
-  AlertTriangle,
-  ArrowRight,
   CheckCircle2,
   FileText,
   IndianRupee,
   MapPin,
-  Pill,
   Search,
   ShieldAlert,
   Volume2,
@@ -23,75 +20,77 @@ interface SastiDawaFinderProps {
   initialQuery?: string;
 }
 
+interface CdscoMatchedRecord {
+  id: string; kind: string; batch: string; product: string; manufacturer: string;
+  issue: string; laboratory: string; period: string; reportedDate?: string; sourceUrl: string;
+}
+interface CdscoCheck {
+  checked: boolean;
+  state: 'matching-alert' | 'confirmation-needed' | 'no-match' | 'not-checked';
+  label: { en: string; hi: string };
+  recordCount?: number;
+  matchedRecord?: CdscoMatchedRecord;
+}
+interface ResolveResponse {
+  success: boolean;
+  data?: { resolved: ResolvedMedicine; cdsco: CdscoCheck; checkedAt: string };
+  error?: string;
+  errorHi?: string;
+}
+
+async function resolveMedicine(query: string, batch = ''): Promise<{ resolved: ResolvedMedicine | null; cdsco: CdscoCheck | null }> {
+  const url = new URL('/api/medicine/resolve', window.location.origin);
+  url.searchParams.set('q', query.trim());
+  if (batch.trim()) url.searchParams.set('batch', batch.trim());
+  const response = await fetch(url.toString());
+  const json = (await response.json()) as ResolveResponse;
+  if (!response.ok || !json.success || !json.data) {
+    throw new Error(json.error || json.errorHi || 'No medicine information found.');
+  }
+  return { resolved: json.data.resolved, cdsco: json.data.cdsco };
+}
+
 export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiDawaFinderProps) {
   const [query, setQuery] = useState(initialQuery || '');
   const [batch, setBatch] = useState('');
   const [busy, setBusy] = useState(false);
   const [resolved, setResolved] = useState<ResolvedMedicine | null>(null);
-  const [cdscoCheck, setCdscoCheck] = useState<any | null>(null);
+  const [cdscoCheck, setCdscoCheck] = useState<CdscoCheck | null>(null);
   const [error, setError] = useState('');
   const [chemistSlip, setChemistSlip] = useState<ChemistSlipData | null>(null);
   const [playingVoice, setPlayingVoice] = useState(false);
 
-  // Auto-search when opened with an initial query from hero search bar
-  useEffect(() => {
-    if (initialQuery && initialQuery.trim()) {
-      setQuery(initialQuery);
-      // Trigger search after a short delay to ensure component is mounted
-      const timer = setTimeout(() => {
-        const url = new URL('/api/medicine/resolve', window.location.origin);
-        url.searchParams.set('q', initialQuery.trim());
-        setBusy(true);
-        setError('');
-        setResolved(null);
-        setCdscoCheck(null);
-        fetch(url.toString())
-          .then(r => r.json())
-          .then((json: any) => {
-            if (json.success && json.data) {
-              setResolved(json.data.resolved);
-              setCdscoCheck(json.data.cdsco);
-            } else {
-              setError(json.error || 'No medicine information found.');
-            }
-          })
-          .catch(() => setError('Network error'))
-          .finally(() => setBusy(false));
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  async function handleSearch(e?: React.FormEvent) {
-    if (e) e.preventDefault();
-    if (!query.trim()) return;
-
+  async function runSearch(term: string, batchValue = '') {
+    if (!term.trim()) return;
     setBusy(true);
     setError('');
     setResolved(null);
     setCdscoCheck(null);
-
     try {
-      const url = new URL('/api/medicine/resolve', window.location.origin);
-      url.searchParams.set('q', query.trim());
-      if (batch.trim()) url.searchParams.set('batch', batch.trim());
-
-      const res = await fetch(url.toString());
-      const json = (await res.json()) as any;
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || json.errorHi || 'No medicine information found.');
-      }
-      if (json.data) {
-        setResolved(json.data.resolved);
-        setCdscoCheck(json.data.cdsco);
-      } else {
-        throw new Error(json.error || 'No medicine information found.');
-      }
+      const { resolved: found, cdsco } = await resolveMedicine(term, batchValue);
+      setResolved(found);
+      setCdscoCheck(cdsco);
+      if (!found) setError('No medicine information found.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
     } finally {
       setBusy(false);
     }
+  }
+
+  // Auto-search when opened with an initial query from hero search bar
+  useEffect(() => {
+    if (initialQuery && initialQuery.trim()) {
+      const timer = setTimeout(() => { void runSearch(initialQuery); }, 0);
+      return () => clearTimeout(timer);
+    }
+    return () => { window.speechSynthesis?.cancel(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot auto search on mount
+  }, []);
+
+  async function handleSearch(e?: React.FormEvent) {
+    if (e) e.preventDefault();
+    await runSearch(query, batch);
   }
 
   function playDadiSpeech() {
@@ -246,20 +245,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
             onClick={() => {
               setQuery(sample);
               setBatch('');
-              setTimeout(() => {
-                const url = new URL('/api/medicine/resolve', window.location.origin);
-                url.searchParams.set('q', sample);
-                setBusy(true);
-                fetch(url.toString())
-                  .then((r) => r.json())
-                  .then((json: any) => {
-                    if (json.success) {
-                      setResolved(json.data.resolved);
-                      setCdscoCheck(json.data.cdsco);
-                    }
-                  })
-                  .finally(() => setBusy(false));
-              }, 50);
+              void runSearch(sample);
             }}
             style={{
               background: '#f1f5f9',
@@ -286,8 +272,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
       {resolved && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {/* Top Safety / CDSCO Card */}
-          {cdscoCheck && cdscoCheck.checked && (
-            <div
+          {cdscoCheck && cdscoCheck.checked && (            <div
               style={{
                 borderRadius: '12px',
                 padding: '1rem',
@@ -308,24 +293,28 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                     </strong>
                     <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
                       {hindi
-                        ? 'CDSCO के 7,900+ आधिकारिक राज्य एवं केंद्रीय औषधि रिपोर्ट से लाइव मिलान'
-                        : 'Cross-checked against 7,900+ official Indian drug testing inspection records'}
+                        ? `CDSCO के ${(cdscoCheck.recordCount ?? 0).toLocaleString('en-IN')} आधिकारिक औषधि रिपोर्ट से लाइव मिलान`
+                        : `Cross-checked against ${(cdscoCheck.recordCount ?? 0).toLocaleString('en-IN')} official CDSCO inspection records`}
                     </p>
                   </div>
                 </div>
 
                 {cdscoCheck.state === 'matching-alert' && cdscoCheck.matchedRecord && (
                   <button
-                    onClick={() =>
+                    onClick={() => {
+                      const matched = cdscoCheck.matchedRecord;
+                      if (!matched) return;
                       setChemistSlip({
                         product: resolved.brand,
-                        batch: cdscoCheck.matchedRecord.batch,
-                        manufacturer: cdscoCheck.matchedRecord.manufacturer,
-                        issue: cdscoCheck.matchedRecord.issue,
-                        laboratory: cdscoCheck.matchedRecord.laboratory,
-                        period: cdscoCheck.matchedRecord.period,
-                      })
-                    }
+                        batch: matched.batch,
+                        manufacturer: matched.manufacturer,
+                        issue: matched.issue,
+                        laboratory: matched.laboratory,
+                        period: matched.period,
+                        reportId: matched.id,
+                        sourceUrl: matched.sourceUrl,
+                      });
+                    }}
                     type="button"
                     style={{
                       background: '#b91c1c',

@@ -16,8 +16,11 @@ function yymmdd(value: string) {
   const month = Number(value.slice(2, 4));
   const day = Number(value.slice(4, 6));
   const fullYear=year >= 50 ? 1900 + year : 2000 + year;
-  if (month < 1 || month > 12 || day > new Date(Date.UTC(fullYear,month,0)).getUTCDate()) return null;
-  return `${year >= 50 ? 1900 + year : 2000 + year}-${value.slice(2, 4)}-${day === 0 ? 'last day' : value.slice(4, 6)}`;
+  // GS1 encodes the last day of the month as day 00.
+  const daysInMonth=new Date(Date.UTC(fullYear,month,0)).getUTCDate();
+  if (month < 1 || month > 12 || day > daysInMonth) return null;
+  const dayString=String(day === 0 ? daysInMonth : day).padStart(2,'0');
+  return `${fullYear}-${value.slice(2, 4)}-${dayString}`;
 }
 
 function parseDigitalLink(raw: string) {

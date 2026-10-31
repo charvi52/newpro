@@ -4,8 +4,8 @@ import {ArrowUpRight,Heart,Shield,Plus} from 'lucide-react';
 import {SkyHero,SceneStory,CompanionSection} from './sky-experience';
 import {useI18n} from './language';
 const clamp=(n:number)=>Math.min(1,Math.max(0,n));
-type Props={onCabinet:()=>void;onScan:()=>void;onAlerts:()=>void;onFamily:()=>void;onSample:()=>void;recordCount:number;onSearch?:(q:string)=>void};
-export default function EditorialHome({onCabinet,onScan,onAlerts,onFamily,onSample,recordCount,onSearch}:Props){
+type Props={onCabinet:()=>void;onScan:()=>void;onAlerts:()=>void;onSample:()=>void;onSearch?:(q:string)=>void};
+export default function EditorialHome({onCabinet,onScan,onAlerts,onSample,onSearch}:Props){
  const {hindi}=useI18n();const t=(en:string,hi:string)=>hindi?hi:en;
  const [faq,setFaq]=useState<number|null>(null);
  useEffect(()=>{const root=document.querySelector('.editorial-home');if(!root)return;const nodes=root.querySelectorAll('[data-reveal]');const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-revealed');observer.unobserve(e.target);}}),{threshold:.12});nodes.forEach(n=>observer.observe(n));return()=>observer.disconnect();},[]);
