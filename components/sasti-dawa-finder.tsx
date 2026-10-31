@@ -77,10 +77,11 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
       if (batch.trim()) url.searchParams.set('batch', batch.trim());
 
       const res = await fetch(url.toString());
-      if (!res.ok) throw new Error('Search failed. Please try again.');
-
       const json = (await res.json()) as any;
-      if (json.success && json.data) {
+      if (!res.ok || !json.success) {
+        throw new Error(json.error || json.errorHi || 'No medicine information found.');
+      }
+      if (json.data) {
         setResolved(json.data.resolved);
         setCdscoCheck(json.data.cdsco);
       } else {

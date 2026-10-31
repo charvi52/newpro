@@ -555,7 +555,7 @@ export const INTERACTION_RULES: Array<{
  * Resolve any medicine name (Augmentin, Pan-D, Allegra, etc.) to its active salt,
  * Jan Aushadhi generic equivalent, prices and precautions.
  */
-export async function resolveMedicine(query: string): Promise<ResolvedMedicine> {
+export async function resolveMedicine(query: string): Promise<ResolvedMedicine | null> {
   const q = query.trim().toLowerCase();
 
   // 1. Check local preloaded comprehensive Indian database
@@ -599,7 +599,10 @@ CRITICAL PRICING RULES:
 - genericPrice = equivalent PMBJP Jan Aushadhi generic price in ₹, typically 70-85% cheaper.
 - NEVER use "$" or "USD". This is an Indian pharmacy app.
 
-Return ONLY a valid JSON object matching this schema:
+IMPORTANT: If the query is NOT a real medicine, drug, or pharmaceutical product, return ONLY: {"notFound": true}
+Do NOT make up fake medicine data for random words or gibberish.
+
+If it IS a real medicine, return ONLY a valid JSON object matching this schema:
 {
   "brand": string (Clean brand or generic name),
   "salt": string (Exact chemical salt name(s)),
@@ -638,6 +641,9 @@ Return ONLY a valid JSON object matching this schema:
         const textContent = json.candidates?.[0]?.content?.parts?.[0]?.text;
         if (textContent) {
           const parsed = JSON.parse(textContent);
+          if (parsed.notFound) {
+            return null; // Gemini confirmed this is not a real medicine
+          }
           if (parsed.brand && parsed.salt) {
             const bPrice = Number(parsed.brandPrice) || 120;
             const gPrice = Number(parsed.genericPrice) || Math.round(bPrice * 0.22);
@@ -685,7 +691,10 @@ Return ONLY a valid JSON object matching this schema:
     try {
       const aiPrompt = `You are a clinical pharmacologist and Indian Jan Aushadhi (PMBJP) specialist.
 Resolve this medicine query: "${query}".
-Return ONLY a valid JSON object matching this schema:
+IMPORTANT: If the query is NOT a real medicine, drug, or pharmaceutical product, return ONLY: {"notFound": true}
+Do NOT make up fake medicine data for random words or gibberish.
+
+If it IS a real medicine, return ONLY a valid JSON object matching this schema:
 {
   "brand": string (Clean brand or generic name),
   "salt": string (Exact chemical salt name(s)),
@@ -833,6 +842,12 @@ Return ONLY a valid JSON object matching this schema:
   }
 
   // 4. Guaranteed Smart Fallback for any uncommon or typed name
+  // Reject obvious gibberish: must be at least 3 chars and contain at least one vowel
+  const hasVowel = /[aeiouAEIOU]/i.test(q);
+  const isLongEnough = q.replace(/\s+/g, '').length >= 3;
+  if (!hasVowel || !isLongEnough) {
+    return null; // Not a recognizable medicine name
+  }
   const isEyeDrop = /eye|drop|tear|lubri|lube|opht|opt/i.test(q);
   const isEarDrop = /ear|otic/i.test(q);
   const isNasalDrop = /nasal|spray|otrivin/i.test(q);
