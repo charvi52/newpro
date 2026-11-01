@@ -192,7 +192,7 @@
   .scan-confirm-dialog .evidence-table>div b{max-width:100%}
 }
 
-/* Carely visual refresh — existing behavior and content are preserved. */
+/* MedPro visual refresh — existing behavior and content are preserved. */
 :root{--ink:#0B2A33;--muted:#475569;--paper:#fff;--coral:#0F4C5C;--dark:#0F4C5C;--lavender:#EAF5F4;--line:#cbd5e1}
 body{font-size:18px;line-height:1.5;background:#fff;color:#0B2A33}
 .site :is(p,input,select,textarea,label){font-size:18px;line-height:1.5}

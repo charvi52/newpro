@@ -5,7 +5,7 @@ import './sky.css';
 import {ThemeProvider} from '@/components/theme';
 import {themeBootScript} from '@/lib/theme';
 export const metadata:Metadata={
- title:'Carely — Medicine details, together',
+ title:'MedPro — Medicine details, together',
  description:'India-first medicine information and personal cabinet. Scan printed codes, check official CDSCO alerts, and share only with permission.',
  icons:{icon:'/favicon.svg'},
 };
