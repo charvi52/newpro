@@ -4,6 +4,41 @@ import { loadOfflineSnapshot, batchStatus } from '@/lib/offline-medical';
 
 export const runtime = 'nodejs';
 
+/**
+ * Resolve results (including honest 404s) are cached in memory so repeated or
+ * spammy queries cannot burn through Gemini's free quota of 500 grounded
+ * searches/day. Prices change rarely; CDSCO batch checks here run off the
+ * bundled snapshot, so a short-lived cache cannot stale them out.
+ */
+type CachedResponse = { body: Record<string, unknown>; status: number; at: string };
+const resolveCache = new Map<string, CachedResponse>();
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h for successful resolutions
+const NEGATIVE_TTL_MS = 60 * 60 * 1000; // 1h for unknown-medicine 404s
+const CACHE_MAX = 500;
+
+function cacheGet(key: string, ttl: number): CachedResponse | null {
+  const hit = resolveCache.get(key);
+  if (!hit) return null;
+  if (Date.now() - new Date(hit.at).getTime() > ttl) {
+    resolveCache.delete(key);
+    return null;
+  }
+  return hit;
+}
+
+function cacheSet(key: string, entry: CachedResponse): void {
+  while (resolveCache.size >= CACHE_MAX) {
+    const oldest = resolveCache.keys().next().value;
+    if (oldest === undefined) break;
+    resolveCache.delete(oldest);
+  }
+  resolveCache.set(key, entry);
+}
+
+function cacheKey(q: string, batch: string): string {
+  return `${q.trim().toLowerCase()}|${batch.trim().toUpperCase()}`;
+}
+
 interface CdscoCheck {
   checked: boolean;
   state: 'matching-alert' | 'confirmation-needed' | 'no-match' | 'not-checked';
@@ -23,25 +58,40 @@ interface CdscoCheck {
   };
 }
 
-async function resolveWithAlerts(q: string, batch: string): Promise<Response> {
+async function resolveWithAlerts(q: string, batch: string): Promise<{ body: Record<string, unknown>; status: number }> {
   try {
+    const key = cacheKey(q, batch);
+    const cached = cacheGet(key, resolveCache.get(key)?.body.error ? NEGATIVE_TTL_MS : CACHE_TTL_MS);
+    if (cached) {
+      return {
+        body: { ...cached.body, cachedSince: cached.at },
+        status: cached.status,
+      };
+    }
+
     // 1. Resolve medicine, generic alternative, and prices
     const resolved = await resolveMedicine(q);
 
     if (!resolved) {
-      return hasLiveSearch()
-        ? NextResponse.json({
-          success: false,
-          error: 'This does not appear to be a recognized medicine. Please check the spelling and try again.',
-          errorHi: 'यह कोई मान्यता प्राप्त दवा नहीं लगती। कृपया नाम जाँचें और दोबारा प्रयास करें।',
-        }, { status: 404 })
+      const notFound = hasLiveSearch()
+        ? {
+          body: {
+            success: false,
+            error: 'This does not appear to be a recognized medicine. Please check the spelling and try again.',
+            errorHi: 'यह कोई मान्यता प्राप्त दवा नहीं लगती। कृपया नाम जाँचें और दोबारा प्रयास करें।',
+          },
+        }
         // Without the live provider only curated entries are searchable; denying that the
         // medicine exists would be a false claim about a real product.
-        : NextResponse.json({
-          success: false,
-          error: 'This medicine is not in the bundled list of popular Indian medicines. Live search for any medicine is currently not configured on the server (missing GEMINI_API_KEY). Try a popular brand such as Augmentin 625, Pan-D or Dolo 650.',
-          errorHi: 'यह दवा बंडल की लोकप्रिय दवाओं की सूची में नहीं है। किसी भी दवा की लाइव खोज अभी सर्वर पर सेट नहीं है (GEMINI_API_KEY गायब)। Augmentin 625, Pan-D या Dolo 650 जैसे लोकप्रिय नाम आज़माएँ।',
-        }, { status: 404 });
+        : {
+          body: {
+            success: false,
+            error: 'This medicine is not in the bundled list of popular Indian medicines. Live search for any medicine is currently not configured on the server (missing GEMINI_API_KEY). Try a popular brand such as Augmentin 625, Pan-D or Dolo 650.',
+            errorHi: 'यह दवा बंडल की लोकप्रिय दवाओं की सूची में नहीं है। किसी भी दवा की लाइव खोज अभी सर्वर पर सेट नहीं है (GEMINI_API_KEY गायब)। Augmentin 625, Pan-D या Dolo 650 जैसे लोकप्रिय नाम आज़माएँ।',
+          },
+        };
+      cacheSet(key, { body: notFound.body, status: 404, at: new Date().toISOString() });
+      return { ...notFound, status: 404 };
     }
 
     // 2. Cross-check batch against official CDSCO alerts
@@ -128,18 +178,22 @@ async function resolveWithAlerts(q: string, batch: string): Promise<Response> {
       }
     }
 
-    return NextResponse.json({
+    const body: Record<string, unknown> = {
       success: true,
       data: {
         resolved,
         cdsco: cdscoCheck,
         checkedAt: new Date().toISOString(),
       },
-    }, { headers: { 'cache-control': 'no-store' } });
+    };
+    cacheSet(key, { body, status: 200, at: String((body.data as { checkedAt: string }).checkedAt) });
+    return { body, status: 200 };
   } catch (err) {
-    return NextResponse.json({
-      error: err instanceof Error ? err.message : 'Medicine resolver unavailable',
-    }, { status: 500 });
+    // Errors are not cached: a transient snapshot/provider outage must not pin.
+    return {
+      body: { error: err instanceof Error ? err.message : 'Medicine resolver unavailable' },
+      status: 500,
+    };
   }
 }
 
@@ -152,7 +206,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Please provide a medicine name in q parameter' }, { status: 400 });
   }
 
-  return resolveWithAlerts(q, batch);
+  const result = await resolveWithAlerts(q, batch);
+  return NextResponse.json(result.body, { status: result.status, headers: { 'cache-control': 'no-store' } });
 }
 
 export async function POST(request: Request) {
@@ -167,7 +222,8 @@ export async function POST(request: Request) {
 
     // Call the shared handler directly; a self-fetch to "localhost" fails on any
     // non-default port and adds an avoidable network hop.
-    return resolveWithAlerts(q, batch);
+    const result = await resolveWithAlerts(q, batch);
+    return NextResponse.json(result.body, { status: result.status, headers: { 'cache-control': 'no-store' } });
   } catch {
     return NextResponse.json({ error: 'Invalid JSON request body' }, { status: 400 });
   }
