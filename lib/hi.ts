@@ -70,12 +70,9 @@ Saved on this device.|इस डिवाइस पर सहेजा गया
 Cloud saving is optional and requires a signed-in Supabase account. A saved entry is not a safety or authenticity check.|क्लाउड में सहेजना वैकल्पिक है और Supabase खाते में साइन इन करना ज़रूरी है। सहेजना सुरक्षा या असलियत की जाँच नहीं है।
 Little details. People you love.|छोटी जानकारी। आपके अपने।
 About MedPro|MedPro के बारे में
-Ask MedPro AI|MedPro AI से पूछें
 © 2026 MedPro · Built with care.|© 2026 MedPro · देखभाल के साथ बनाया गया।
 CDSCO India: checked report coverage shown|CDSCO भारत: जाँची गई रिपोर्टों का दायरा देखें
 Not medical advice.|यह चिकित्सकीय सलाह नहीं है।
-Open MedPro AI assistant|MedPro AI सहायक खोलें
-MedPro AI|MedPro AI
 Dismiss notification|सूचना बंद करें
 Close dialog|विंडो बंद करें
 SCAN AND CONFIRM|स्कैन करें और पुष्टि करें
@@ -134,7 +131,7 @@ MedPro is a prototype for storing packaging details and consent-based family awa
 Works without keys|बिना API कुंजी के उपलब्ध
 Camera or photo barcode decoding, manual cabinet entries, locally stored data, and Indian medicine-name search when its public provider is available.|कैमरा या फ़ोटो से बारकोड पढ़ना, खुद दवा जोड़ना और डिवाइस पर सहेजना उपलब्ध है। सार्वजनिक सेवा उपलब्ध होने पर दवा के नाम से खोज भी होती है।
 Requires owner setup|साइट स्वामी का सेटअप आवश्यक
-Cloud accounts and family inbox require Supabase. AI chat and spoken responses require Supabase sign-in and a privately configured OpenAI API key. GTIN identification requires provider coverage and an optional key.|क्लाउड खाते और परिवार इनबॉक्स के लिए Supabase चाहिए। AI और आवाज़ के लिए साइन इन तथा निजी OpenAI API कुंजी चाहिए। GTIN पहचान सेवा के दायरे और कुंजी पर निर्भर है।
+Cloud accounts and family inbox require Supabase. GTIN identification requires provider coverage and an optional key.|क्लाउड खाते और परिवार इनबॉक्स के लिए Supabase चाहिए। GTIN पहचान सेवा के दायरे और कुंजी पर निर्भर है।
 Indian batch-alert limitation|भारतीय बैच अलर्ट की सीमाएँ
 MedPro links to live official CDSCO pages. Quality history searches the listed official report tables and shows coverage gaps. It cannot authenticate medicines, provide a complete supply-chain history, recommend treatment, or issue safety verdicts.|MedPro आधिकारिक CDSCO स्रोत दिखाता है। गुणवत्ता खोज केवल बताई गई रिपोर्टों तक सीमित है। यह दवा की असलियत, पूरी आपूर्ति श्रृंखला, उपचार या सुरक्षित होने की पुष्टि नहीं करता।
 YOUR DEVICE STORAGE|इस डिवाइस का संग्रह
@@ -188,10 +185,6 @@ Write a short update…|छोटा संदेश लिखें…
 Share in inbox|इनबॉक्स में साझा करें
 Shared inbox|साझा इनबॉक्स
 No messages loaded yet. Sign in and refresh to check your inbox.|अभी कोई संदेश नहीं आया है। साइन इन करके इनबॉक्स ताज़ा करें।
-Your question is sent to the configured OpenAI API. Your cabinet data is not included. AI answers can be wrong and are not medical advice or verified recall searches.|आपका सवाल OpenAI API को भेजा जाता है, दवाओं की निजी सूची नहीं। AI का उत्तर गलत हो सकता है; यह चिकित्सकीय सलाह या पुष्टि की गई रिकॉल खोज नहीं है।
-The site works without AI. To enable this panel, the site owner must privately set OPENAI_API_KEY on the server. A ChatGPT subscription does not provide API credit.|साइट AI के बिना भी चलती है। AI के लिए स्वामी को सर्वर पर निजी OPENAI_API_KEY सेट करनी होगी। ChatGPT सदस्यता में API क्रेडिट शामिल नहीं है।
-Ask in English or हिन्दी|अंग्रेज़ी या हिन्दी में पूछें
-Ask a general question about medicine labels…|दवा के लेबल के बारे में सामान्य सवाल पूछें…
 Accounts, AI and barcode-to-product lookup need owner-provided credentials. The camera, manual entries and available medicine-name searches can work without them. This is not a medicine-authentication or treatment service.|खाते, AI और बारकोड से उत्पाद पहचान के लिए स्वामी का सेटअप चाहिए। कैमरा, खुद प्रविष्टि और उपलब्ध नाम खोज इनके बिना भी चलती है। यह दवा की असलियत या उपचार की सेवा नहीं है।
 Official medicine quality history|आधिकारिक दवा गुणवत्ता रिपोर्टें
 Medicine quality history|दवा की गुणवत्ता रिपोर्टें
@@ -267,15 +260,11 @@ Look up barcode product|बारकोड से उत्पाद खोज�
 Checking…|जाँच जारी है…
 Keys provided|सेटअप उपलब्ध
 Setup needed|सेटअप ज़रूरी है
-AI setup needed|AI सेटअप ज़रूरी है
-Key detected|कुंजी उपलब्ध
 Working…|काम जारी है…
 Enabled|चालू
 Revoked|हटाई गई
 Revoke|अनुमति हटाएँ
 Re-enable|फिर अनुमति दें
-Read aloud|सुनें
-Playing…|आवाज़ चल रही है…
 UPDATE PACK DETAILS|पैक की जानकारी बदलें
 REVIEW AND CONFIRM|जाँचें और पुष्टि करें
 Edit medicine details|दवा की जानकारी बदलें
@@ -284,13 +273,10 @@ Save changes|बदलाव सहेजें
 Confirm and save|पुष्टि करें और सहेजें
 YOUR PRIVATE SPACE|आपकी निजी जगह
 SHARING WITH CONSENT|सहमति से साझा करना
-YOUR MEDPRO ASSISTANT|आपका MedPro सहायक
 Save across devices.|दूसरे डिवाइस पर भी सहेजें।
 Your circle, your permission.|आपके अपने, आपकी अनुमति।
-Ask a real question.|अपना सवाल पूछें।
 Your cabinet works locally without an account. Cloud syncing is optional.|आपकी सूची बिना खाते के भी इस डिवाइस पर चलती है। क्लाउड वैकल्पिक है।
 Family permissions and shared messages use authenticated accounts, not pretend phone notifications.|परिवार की अनुमतियाँ और संदेश वास्तविक खातों से चलते हैं, नकली सूचनाओं से नहीं।
-Ask general medicine-information questions in English or Hindi. No preset four-question bot.|दवा की सामान्य जानकारी के बारे में अंग्रेज़ी या हिन्दी में अपना सवाल पूछें।
 Not of Standard Quality (NSQ)|मानक गुणवत्ता में विफल (NSQ)
 Reported spurious / investigation notice|संदिग्ध नकली दवा / जाँच सूचना
 Product/Drug Name|उत्पाद / दवा का नाम
@@ -329,7 +315,6 @@ Object.assign(hindi,{
  'Can MedPro identify any medicine from its barcode?':'क्या MedPro हर दवा को बारकोड से पहचान सकता है?','The scanner can decode common retail and GS1 codes. Barcode-to-product matching depends on provider coverage and a configured optional lookup key. You can also search by the printed medicine name.':'स्कैनर सामान्य बारकोड और GS1 कोड पढ़ता है। उत्पाद की पहचान सेवा के दायरे और कुंजी पर निर्भर है। पैक पर छपे नाम से भी खोज सकते हैं।',
  'Can MedPro check published Indian batch alerts?':'क्या प्रकाशित भारतीय बैच अलर्ट जाँचे जा सकते हैं?','Yes. Use Medicine quality history to search the checked CDSCO NSQ and spurious report tables. A full match requires product, manufacturer and batch agreement. Coverage is shown with every result. No result is a safety verdict.':'हाँ। गुणवत्ता रिपोर्टों में उपलब्ध CDSCO रिकॉर्ड खोजें। पूरे मिलान के लिए उत्पाद, निर्माता और बैच मिलना ज़रूरी है। हर परिणाम में दायरा दिखता है। कोई परिणाम सुरक्षा की पुष्टि नहीं है।',
  'Will a family member receive a real notification?':'क्या परिवार सदस्य को सूचना मिलेगी?','Authenticated family members can see shared messages inside MedPro when Supabase is configured. Email, SMS, WhatsApp, push and automatic recall monitoring are not implemented.':'Supabase सेटअप होने पर साइन इन किए सदस्य MedPro में साझा संदेश देख सकते हैं। ईमेल, SMS, WhatsApp, पुश और स्वचालित रिकॉल निगरानी उपलब्ध नहीं हैं।',
- 'Does the AI work without an API key?':'क्या AI बिना API कुंजी के चलता है?','No. The owner must configure a private OpenAI API key and Supabase sign-in. Scanning, manual entries and medicine-name search remain available without the AI key.':'नहीं। स्वामी को निजी OpenAI कुंजी और Supabase साइन इन सेट करना होगा। स्कैन, खुद प्रविष्टि और नाम से खोज AI कुंजी के बिना भी उपलब्ध हैं।',
  'Camera access was blocked. Allow camera access in your browser settings, or upload a barcode photo.':'कैमरे की अनुमति बंद है। ब्राउज़र सेटिंग में अनुमति दें या बारकोड की फ़ोटो जोड़ें।','No camera was found. Connect a camera or upload a barcode photo.':'कैमरा नहीं मिला। कैमरा जोड़ें या बारकोड की फ़ोटो चुनें।','The camera is in use or could not start. Close other camera apps and try again, or upload a photo.':'कैमरा व्यस्त है या चालू नहीं हुआ। दूसरे कैमरा ऐप बंद करके फिर कोशिश करें या फ़ोटो जोड़ें।','This camera could not use the requested settings. Try a different device or upload a photo.':'कैमरा इन सेटिंग से नहीं चल सका। दूसरा डिवाइस आज़माएँ या फ़ोटो जोड़ें।',
  'Camera is unavailable. Use HTTPS or localhost, check camera permissions, or upload a barcode photo.':'कैमरा उपलब्ध नहीं है। HTTPS या localhost और अनुमति जाँचें, या बारकोड की फ़ोटो जोड़ें।','Choose an image smaller than 15 MB.':'15 MB से छोटी फ़ोटो चुनें।','No supported code was found. Try a clear, well-lit image of the barcode or DataMatrix.':'समर्थित कोड नहीं मिला। बारकोड या DataMatrix की साफ़, उजाले वाली फ़ोटो चुनें।','Medicine added to your cabinet.':'दवा आपकी सूची में जोड़ दी गई।','Medicine details updated.':'दवा की जानकारी बदल दी गई।','Medicine removed.':'दवा हटा दी गई।','Signed out. Medicines saved on this device have been kept.':'साइन आउट हो गया। इस डिवाइस पर सहेजी दवाएँ रखी गई हैं।','Signed in successfully.':'साइन इन हो गया।','No cloud cabinet saved yet.':'अभी क्लाउड में कोई सूची सहेजी नहीं गई है।','Merged cabinet saved to your cloud account.':'जोड़ी गई सूची क्लाउड खाते में सहेज दी गई।',
  'The check took too long. Please try again. You can also open the official CDSCO portal below.':'जाँच में अधिक समय लगा। फिर कोशिश करें या नीचे आधिकारिक CDSCO पोर्टल खोलें।','Name not supplied':'नाम नहीं दिया गया','Cloud cabinet':'क्लाउड में दवाएँ',

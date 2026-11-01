@@ -2,18 +2,18 @@
 import {useI18n} from '@/components/language';
 
 import {useEffect,useRef,useState} from 'react';
-import {ArrowUpRight,CheckCircle2,Info,LockKeyhole,Mail,ShieldCheck,TriangleAlert,UserRound,Volume2} from 'lucide-react';
+import {ArrowUpRight,CheckCircle2,Info,LockKeyhole,Mail,ShieldCheck,TriangleAlert,UserRound} from 'lucide-react';
 import type {Medicine} from '@/lib/carely';
 import {restore,mergeCabinets} from '@/lib/carely';
 import MedicineHistory from '@/components/medicine-history';
 import {cloudRequest} from '@/lib/cloud-client';
 
-type ServiceMode='cabinet'|'family'|'alerts'|'assistant';
+type ServiceMode='cabinet'|'family'|'alerts';
 type Session={access_token:string;refresh_token:string;expires_at:number;user:{id:string;email:string}};
 type AuthResponse=Session & {expires_in:number;msg?:string;error_description?:string;message?:string};
 type Grant={id:string;owner_id:string;recipient_email:string;enabled:boolean};
 type Note={id:string;body:string;created_at:string};
-type Status={supabase:boolean;ai:boolean;barcodeLookup:boolean;indiaAlerts:string};
+type Status={supabase:boolean;barcodeLookup:boolean;indiaAlerts:string};
 const base=process.env.NEXT_PUBLIC_SUPABASE_URL;
 const anon=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 const NSQ_URL='https://cdscoonline.gov.in/CDSCO/viewPublicNSQDrug';
@@ -31,9 +31,6 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
  const [grants,setGrants]=useState<Grant[]>([]);
  const [notes,setNotes]=useState<Note[]>([]);
  const [noteText,setNoteText]=useState('');
- const [question,setQuestion]=useState('');
- const [answer,setAnswer]=useState('');
- const [audioBusy,setAudioBusy]=useState(false);
  const [selected,setSelected]=useState('');
  const [cloudReview,setCloudReview]=useState<{items:Medicine[];revision:number;conflicts:number;device:string}|null>(null);
  const refreshToken=useRef<Promise<string>|null>(null);
@@ -85,7 +82,7 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
  }
  async function signOut(){await run(async()=>{
   try{await fetch(`${base}/auth/v1/logout`,{method:'POST',headers:{apikey:anon!,Authorization:`Bearer ${await token()}`}});}finally{
-   sessionStorage.removeItem('carely-account');sessionRef.current=null;setSession(null);setGrants([]);setNotes([]);setAnswer('');setCloudReview(null);setMessage('Signed out. Medicines saved on this device have been kept.');
+   sessionStorage.removeItem('carely-account');sessionRef.current=null;setSession(null);setGrants([]);setNotes([]);setCloudReview(null);setMessage('Signed out. Medicines saved on this device have been kept.');
   }
  });}
 
@@ -120,8 +117,8 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
   <p className="service-message" role="status" aria-live="polite">{t(message)}</p>
  </section>;
 
- return <section className="real-services services-single" aria-label={t(mode==='family'?'Family sharing':mode==='assistant'?'MedPro AI':'Cloud cabinet')}>
-  <div className="services-heading"><span className="eyebrow">{t(mode==='cabinet'?'YOUR PRIVATE SPACE':mode==='family'?'SHARING WITH CONSENT':'YOUR MEDPRO ASSISTANT')}</span><h2>{t(mode==='cabinet'?'Save across devices.':mode==='family'?'Your circle, your permission.':'Ask a real question.')}</h2><p>{t(mode==='cabinet'?'Your cabinet works locally without an account. Cloud syncing is optional.':mode==='family'?'Family permissions and shared messages use authenticated accounts, not pretend phone notifications.':'Ask general medicine-information questions in English or Hindi. No preset four-question bot.')}</p></div>
+ return <section className="real-services services-single" aria-label={t(mode==='family'?'Family sharing':'Cloud cabinet')}>
+  <div className="services-heading"><span className="eyebrow">{t(mode==='cabinet'?'YOUR PRIVATE SPACE':'SHARING WITH CONSENT')}</span><h2>{t(mode==='cabinet'?'Save across devices.':'Your circle, your permission.')}</h2><p>{t(mode==='cabinet'?'Your cabinet works locally without an account. Cloud syncing is optional.':'Family permissions and shared messages use authenticated accounts, not pretend phone notifications.')}</p></div>
   <div className="service-panels">
    <article className="service-panel">{account}</article>
    {mode==='cabinet'&&<article className="service-panel">
@@ -142,15 +139,6 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
      <label>{t("Message for people with permission")}<textarea rows={3} required maxLength={2000} value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder={t("Write a short update…")}/></label><button disabled={!session||busy||!noteText.trim()}>{t("Share in inbox")}</button>
     </form>
     <h3>{t("Shared inbox")}</h3>{notes.length===0?<p className="service-muted">{t("No messages loaded yet. Sign in and refresh to check your inbox.")}</p>:notes.map(n=><blockquote className="service-note" key={n.id}>{n.body}<small>{new Date(n.created_at).toLocaleString('en-IN')}</small></blockquote>)}
-   </article>}
-   {mode==='assistant'&&<article className="service-panel">
-    <div className="service-inline-heading"><h3>{t("Ask MedPro AI")}</h3><span className={'service-status '+(status?.ai?'ready':'setup')}>{t(status===null?'Checking…':status.ai?'Key detected':'AI setup needed')}</span></div>
-    <p>{t("Your question is sent to the configured OpenAI API. Your cabinet data is not included. AI answers can be wrong and are not medical advice or verified recall searches.")}</p>
-    {!status?.ai&&<p className="service-warning"><Info size={17}/>{' '}{t("The site works without AI. To enable this panel, the site owner must privately set OPENAI_API_KEY on the server. A ChatGPT subscription does not provide API credit.")}</p>}
-    <form className="service-form" onSubmit={e=>{e.preventDefault();void run(async()=>{setAnswer('');const response=await fetch('/api/assistant',{method:'POST',headers:{Authorization:`Bearer ${await token()}`,'Content-Type':'application/json'},body:JSON.stringify({question})});const body=await response.json() as {answer?:string;error?:string};if(!response.ok)throw Error(body.error||'The AI request failed.');setAnswer(body.answer||'No answer received.');})}}>
-     <label>{t("Ask in English or हिन्दी")}<textarea rows={4} maxLength={1500} required value={question} onChange={e=>setQuestion(e.target.value)} placeholder={t("Ask a general question about medicine labels…")}/></label><button disabled={busy||!session||!status?.ai}>{t("Ask MedPro AI")}</button>
-    </form>
-    {answer&&<div className="service-answer" role="status"><p>{answer}</p><button className="secondary" disabled={audioBusy} onClick={()=>void run(async()=>{setAudioBusy(true);try{const response=await fetch('/api/speech',{method:'POST',headers:{Authorization:`Bearer ${await token()}`,'Content-Type':'application/json'},body:JSON.stringify({text:answer.slice(0,1900)})});if(!response.ok)throw Error('Audio unavailable. You can read the answer above.');const blob=await response.blob();const audioURL=URL.createObjectURL(blob);const audio=new Audio(audioURL);audio.onended=()=>{URL.revokeObjectURL(audioURL);setAudioBusy(false);};audio.onerror=()=>{URL.revokeObjectURL(audioURL);setAudioBusy(false);};await audio.play();}catch(e){setAudioBusy(false);throw e;}})}><Volume2 size={16}/> {t(audioBusy?'Playing…':'Read aloud')}</button></div>}
    </article>}
   </div>
   <p role="status" aria-live="polite" className="service-message">{t(busy?'Working…':message)}</p>

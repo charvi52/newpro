@@ -7,7 +7,6 @@ import {historyResult} from '../lib/history-result';
 import {cardTilt} from '../lib/card-motion';
 import {cameraConstraints,cameraError} from '../lib/scanner';
 import {translate} from '../lib/hi';
-import {requireAccount,reserveAiUsage} from '../lib/service-auth';
 const medicine:Medicine={product:'Test pack',manufacturer:'Test manufacturer',strength:'10 mg',form:'tablet',release:'Unknown',batch:'B-1',owner:'Dad',origin:'manual'};
 const record:QualityAlert={id:'unit-fixture',kind:'NSQ',product:'Test pack',brand:'Test brand',batch:'B-1',manufacturer:'M/s. Test Manufacturer Pvt. Ltd., Plot 123, India',manufacturedBy:'',manufactured:'Jan-2025',expiry:'Dec-2026',issue:'Test finding',remarks:'',firmReply:'',reportingSource:'Test fixture',laboratory:'Test fixture',period:'JAN-2026',reportedDate:'',sourceUrl:'https://cdscoonline.gov.in/CDSCO/unit-fixture',retrievedAt:'2026-10-29T00:00:00Z'};
 test('large cabinets survive reload and malformed entries do not discard healthy records',()=>{
@@ -49,21 +48,6 @@ test('scanner explicitly prefers rear camera and reports specific permission/dev
 test('Hindi UI includes the key cabinet, scan and safety outcomes',()=>{
  for(const text of ['Medicine quality history','Scan new medicine','Check quality history','No matching alert found in the checked records','Matching quality alert found','Alert check unavailable','Confirm cloud save'])assert.notEqual(translate(text),text);
 });
-test('AI auth and quota fail closed, preserve server auth and never treat malformed responses as approval',async()=>{
- const oldUrl=process.env.NEXT_PUBLIC_SUPABASE_URL,oldKey=process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
- process.env.NEXT_PUBLIC_SUPABASE_URL='https://test.invalid';process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY='test-public-key';
- const request=new Request('https://carely.invalid',{headers:{authorization:'Bearer test-session'}});
- try{
-  assert.equal(await requireAccount(request,async()=>Response.json({id:'test-user'})),true);
-  assert.equal(await requireAccount(request,async()=>new Response('',{status:401})),false);
-  assert.equal(await requireAccount(request,async()=>Response.json({})),false);
-  assert.equal(await reserveAiUsage(request,'chat',async(url,init)=>{assert.match(String(url),/carely_consume_ai_quota/);assert.equal(new Headers(init?.headers).get('authorization'),'Bearer test-session');return Response.json(true);}), 'allowed');
-  assert.equal(await reserveAiUsage(request,'chat',async()=>Response.json(false)),'limited');
-  assert.equal(await reserveAiUsage(request,'speech',async()=>new Response('',{status:404})),'unavailable');
-  assert.equal(await reserveAiUsage(request,'chat',async()=>Response.json({allowed:true})),'unavailable');
- }finally{if(oldUrl===undefined)delete process.env.NEXT_PUBLIC_SUPABASE_URL;else process.env.NEXT_PUBLIC_SUPABASE_URL=oldUrl;if(oldKey===undefined)delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;else process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY=oldKey;}
-});
-
 test('cloud saves send expected revision and surface a concurrent-edit rejection',async()=>{
  const {cloudRequest}=await import('../lib/cloud-client');const config={url:'https://test.invalid',key:'test-key',token:'test-token'};
  const next=await cloudRequest<number>(config,'rpc/carely_save_cabinet','POST',{p_medicines:[medicine],p_expected_revision:4},async(url,init)=>{assert.match(String(url),/rpc\/carely_save_cabinet$/);assert.equal(JSON.parse(init!.body as string).p_expected_revision,4);assert.equal(new Headers(init?.headers).get('authorization'),'Bearer test-token');return Response.json(5);});assert.equal(next,5);
