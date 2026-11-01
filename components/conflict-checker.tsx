@@ -59,11 +59,11 @@ export default function ConflictChecker({ medicines, hindi }: ConflictCheckerPro
             >
               {interactions.length > 0
                 ? hindi
-                  ? `⚠️ सावधान: आपके कैबिनेट में ${interactions.length} दवाओं के बीच टकराव (Conflict) मिला`
-                  : `⚠️ Caution: ${interactions.length} Drug-Drug Interaction${interactions.length > 1 ? 's' : ''} Detected in Cabinet`
+                  ? `सावधान: आपके कैबिनेट में ${interactions.length} दवाओं के बीच टकराव (Conflict) मिला`
+                  : `Caution: ${interactions.length} Drug-Drug Interaction${interactions.length > 1 ? 's' : ''} Detected in Cabinet`
                 : hindi
-                ? `✅ कैबिनेट सुरक्षा: आपकी ${medicines.length} दवाओं के बीच कोई खतरनाक टकराव नहीं मिला`
-                : `✅ Cabinet Safety: No dangerous drug interactions detected among ${medicines.length} saved medicines`}
+                ? `कैबिनेट सुरक्षा: आपकी ${medicines.length} दवाओं के बीच कोई खतरनाक टकराव नहीं मिला`
+                : `Cabinet Safety: No dangerous drug interactions detected among ${medicines.length} saved medicines`}
             </h4>
             <p style={{ margin: '2px 0 0', fontSize: '0.85rem', color: '#64748b' }}>
               {hindi

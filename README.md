@@ -21,7 +21,7 @@ Use the sun/moon switch in the header. Your choice is saved in this browser; bef
 
 ## Current release
 
-See RELEASE_NOTES.md for the two 3D motion treatments and the reliability fixes. Existing fonts, colours, page layout and navigation are retained. To upgrade cloud/AI features, run the current supabase/schema.sql before using them.
+Existing fonts, colours, page layout and navigation are retained. To upgrade cloud/AI features, run the current supabase/schema.sql before using them.
 
 ## What you can search
 
@@ -69,6 +69,6 @@ Supabase enables accounts, cloud cabinet snapshots and consent-based in-app fami
 
 AI quota safeguards require the included migration: 6 combined requests/minute, 20 chat/day and 10 speech/day per account (UTC), including failed provider attempts. Family inbox refreshes on focus and every 30 seconds while visible.
 
-See VALIDATION.md for checks and verification/ for command output. This remains a prototype, not a clinically validated medical product.
+This remains a prototype, not a clinically validated medical product.
 
 The verified `pnpm run render:build` script uses Next.js Webpack for compatibility with restricted environments; start it with `pnpm run render:start`.

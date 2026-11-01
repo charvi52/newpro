@@ -59,7 +59,7 @@ corepack pnpm render:build
 corepack pnpm render:start
 ```
 
-Test on HTTPS: navigation, camera permissions, barcode upload, product search, manual edits, local-storage migration, Supabase two-account RLS, cloud save/load, family revoke, AI availability and billing limits, and CDSCO official outbound links. See `VALIDATION.md` for verification results from this build environment.
+Test on HTTPS: navigation, camera permissions, barcode upload, product search, manual edits, local-storage migration, Supabase two-account RLS, cloud save/load, family revoke, AI availability and billing limits, and CDSCO official outbound links.
 
 ## Motion and devices
 

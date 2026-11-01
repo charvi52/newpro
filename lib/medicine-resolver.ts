@@ -806,9 +806,9 @@ export function checkDrugInteractions(
 
 /**
  * Expiry Date Status Evaluator:
- * 🟢 Safe (> 60 days)
- * 🟡 Expiring Soon (within 60 days)
- * 🔴 Expired (past current month)
+ * Safe (> 60 days)
+ * Expiring Soon (within 60 days)
+ * Expired (past current month)
  */
 export function evaluateExpiry(expiryStr?: string): ExpiryStatus {
   if (!expiryStr || !expiryStr.trim()) {

@@ -14,5 +14,5 @@ export default function OfflineCache({recordsReady}:{recordsReady:boolean}){
    }catch{/* Local server demo remains available; no false cache-ready claim. */}
   })();return()=>{alive=false;channel?.port1.close();};
  },[recordsReady]);
- return <p className="offline-cache-status" role="status">{ready?'✓ App cached for offline demo reload on this device.':'For offline demo: open once from localhost or HTTPS and wait for app caching. Keep the local server running if caching is unavailable.'}</p>;
+ return <p className="offline-cache-status" role="status">{ready?'App cached for offline demo reload on this device.':'For offline demo: open once from localhost or HTTPS and wait for app caching. Keep the local server running if caching is unavailable.'}</p>;
 }
