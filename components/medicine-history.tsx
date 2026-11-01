@@ -5,11 +5,12 @@ import {AlertTriangle,ArrowUpRight,FileText,IndianRupee,Info,Search,XCircle} fro
 import type {AlertQuery} from '@/lib/quality-alerts';
 import {fetchQualityHistory,type HistoryResult as Result} from '@/lib/history-client';
 import {findMedicineAlternative,savings,PMBJP_SOURCE} from '@/lib/offline-medical';
+import VerificationSlip from '@/components/verification-slip';
 export default function MedicineHistory({product='',manufacturer='',batch='',onChecked}:AlertQuery&{onChecked?:(query:AlertQuery,summary:{state:string;label:string;checkedAt:string})=>void}){
  const {t,hindi}=useI18n();
  const [catalogue,setCatalogue]=useState<Array<{id:string;name:string;manufacturer:string;form:string;route:string;ingredients:Array<{name:string;strength:string;unit:string}>;source:string;sourceUrl:string}>>([]);
  const [catalogueMessage,setCatalogueMessage]=useState('');const catalogueRequest=useRef<AbortController|null>(null);
- const [fields,setFields]=useState({product,manufacturer,batch});const [result,setResult]=useState<Result|null>(null);const [busy,setBusy]=useState(false);const [searched,setSearched]=useState(fields);const request=useRef<AbortController|null>(null);const feedback=useRef<HTMLDivElement>(null);
+ const [fields,setFields]=useState({product,manufacturer,batch});const [result,setResult]=useState<Result|null>(null);const [busy,setBusy]=useState(false);const [searched,setSearched]=useState(fields);const [slip,setSlip]=useState(false);const request=useRef<AbortController|null>(null);const feedback=useRef<HTMLDivElement>(null);
  useEffect(()=>{request.current?.abort();catalogueRequest.current?.abort();setCatalogue([]);setCatalogueMessage('');setFields({product,manufacturer,batch});setResult(null);setBusy(false);},[product,manufacturer,batch]);
  useEffect(()=>()=>{request.current?.abort();catalogueRequest.current?.abort();},[]);
  useEffect(()=>{if(busy||result){feedback.current?.focus({preventScroll:true});feedback.current?.scrollIntoView({block:'nearest',behavior:'auto'});}},[busy,result]);
@@ -39,6 +40,7 @@ export default function MedicineHistory({product='',manufacturer='',batch='',onC
      {result.error&&<p>{t(result.error)}</p>}
      {result.state==='confirmation-needed'&&<p>{t("Possible records are shown below. The supplied details do not establish an exact product, manufacturer and batch match.")}</p>}
      {result.state==='matching-alert'&&<p>{t("A published quality report matches all three supplied identifiers. Read the evidence below and ask a pharmacist or doctor about treatment.")}</p>}
+     {result.state!=='unavailable'&&<p style={{margin:'0.75rem 0 0'}}><button className="btn outline" type="button" onClick={()=>setSlip(true)}><FileText size={16}/> {t('Print verification slip')}{' '}· सत्यापन पर्ची</button></p>}
     </>}
     {busy&&<p>{t("Searching the official history and checking latest-table availability. A slow or unavailable source will show an explicit error.")}</p>}
    </div>}
@@ -93,5 +95,6 @@ export default function MedicineHistory({product='',manufacturer='',batch='',onC
   {!!result?.relatedRecords?.length&&<section aria-label={t("Other reported batches")}><h3>{t("Other reported batches for this medicine")}</h3><p>{t("These reports do not match the batch you entered.")}{result.relatedTotal}{t("related reports were found; showing up to 10.")}</p>{result.relatedRecords.map(({record:r})=><article className="history-evidence" key={'related-'+r.id}><div className="history-status confirmation-needed"><Info size={22}/><strong>{t("Different batch — not a match to your pack")}</strong></div><h4>{r.brand||r.product}</h4><p>{r.product} · {r.manufacturer}</p><p>{t("Reported batch:")}<strong>{r.batch}</strong>{' '}{t("· Reporting period:")}{' '}{r.period}</p><p>{r.issue}</p><a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">{t("Read official CDSCO source")}{' '}<ArrowUpRight size={18}/></a></article>)}</section>}
   {catalogueMessage&&<section aria-label={t("Medicine catalogue information")}><h3>{t("Medicine catalogue information")}</h3><p>{t(catalogueMessage)}</p>{catalogue.map((r,i)=><article className="history-evidence" key={r.id||i}><h4>{r.name}</h4><dl><div><dt>{t("Manufacturer")}</dt><dd>{r.manufacturer||'Not provided'}</dd></div><div><dt>{t("Form / route")}</dt><dd>{r.form||'Not provided'} · {r.route||'Not provided'}</dd></div>{r.ingredients.map((item,j)=><div key={j}><dt>{t("Ingredient / strength")}</dt><dd>{item.name} · {item.strength} {item.unit}</dd></div>)}</dl><p>{r.source}</p><a href={r.sourceUrl} target="_blank" rel="noopener noreferrer">{t("Read catalogue source")}<ArrowUpRight size={18}/></a></article>)}</section>}
   <div className="history-limits"><Info size={22}/><p>{t("Manufacturing and expiry dates appear only when reported in an alert. Full manufacturing, distribution and ownership history are not available from this source. A missing alert does not establish safety or authenticity. Ask a pharmacist or doctor about treatment; do not change treatment based on these results.")}</p></div>
+  {slip&&result&&result.state!=='unavailable'&&<VerificationSlip onClose={()=>setSlip(false)} data={{verdict:result.state==='matching-alert'?'flagged':result.state==='confirmation-needed'?'unverified':'cleared',product:searched.product||'',manufacturer:searched.manufacturer||'',batch:searched.batch||'',checks:[],recordCount:result.coverage?.recordCount??(result.total||0),generatedAt:result.coverage?.snapshotAt||new Date().toISOString(),matches:result.records}}/>}
  </section>;
 }

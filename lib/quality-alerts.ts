@@ -15,7 +15,7 @@ export function evaluateAlert(r:QualityAlert,q:AlertQuery){
  const nameExact=!!p&&[r.product,r.brand].some(n=>normalize(n)===p);
  const nameCandidate=!!p&&[r.product,r.brand].some(n=>normalize(n).includes(p)||p.includes(normalize(n))&&!!normalize(n));
  const company=(n:string)=>manufacturerKey(n.split(/[,;\n]/)[0]);
- const manufacturerExact=!!m&&[r.manufacturer,r.manufacturedBy].some(n=>(manufacturerKey(n)===m||(company(n)===m&&/\b(limited|llp|inc|corporation)$/.test(m)))&&!/^(under investigation|not available|unknown|na|n a)$/.test(manufacturerKey(n)));
+ const manufacturerExact=!!m&&[r.manufacturer,r.manufacturedBy].some(n=>(manufacturerKey(n)===m||company(n)===m)&&!/^(under investigation|not available|unknown|na|n a)$/.test(manufacturerKey(n)));
  const batchExact=!!b&&batchKey(r.batch)===b;
  // A supplied batch always narrows the results. Never fuzzy-match batch IDs.
  const relevant=b?batchExact:(p?nameCandidate:(m?[r.manufacturer,r.manufacturedBy].some(n=>manufacturerKey(n).includes(m)):false));
