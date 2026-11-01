@@ -623,10 +623,13 @@ Return ONLY a valid JSON object matching:
       // googleSearch grounding makes this a genuine live web lookup (real retailer
       // listings) instead of an answer generated from training memory.
       const callGemini = (useSearch: boolean) => fetch(
-        `${endpoint}?key=${geminiKey}`,
+        endpoint,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          // Auth must ride in the x-goog-api-key header, not a ?key= URL param:
+          // since May 2026 AI Studio issues AQ.Ab8… auth keys that the native API
+          // accepts via header, and keys in URLs leak into proxy/server logs.
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
           body: JSON.stringify({
             contents: [{ parts: [{ text: geminiPrompt }] }],
             ...(useSearch ? { tools: [{ googleSearch: {} }] } : {}),
@@ -642,10 +645,18 @@ Return ONLY a valid JSON object matching:
       let liveSourced = true;
       let geminiRes = await callGemini(true);
       if (!geminiRes.ok) {
+        // Surface auth/quota failures clearly: some AQ.-format keys still hit
+        // API_KEY_SERVICE_BLOCKED while Google rolls out the new key type.
+        const errBody = await geminiRes.text().catch(() => '');
+        console.error(`[Gemini search call failed] HTTP ${geminiRes.status}: ${errBody.slice(0, 400)}`);
         // Grounding can fail (quota exhausted, model without tool support). Retry once
         // from model memory, but label the source honestly instead of claiming search.
         liveSourced = false;
         geminiRes = await callGemini(false);
+        if (!geminiRes.ok) {
+          const errBody2 = await geminiRes.text().catch(() => '');
+          console.error(`[Gemini retry failed] HTTP ${geminiRes.status}: ${errBody2.slice(0, 400)}`);
+        }
       }
 
       if (geminiRes.ok) {
