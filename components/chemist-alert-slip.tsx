@@ -131,7 +131,7 @@ export default function ChemistAlertSlip({ data, onClose, hindi }: ChemistAlertS
           </div>
 
           <h3 style={{ fontSize: '1rem', fontWeight: 700, borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem', marginBottom: '0.75rem', color: '#334155' }}>
-            {hindi ? '📦 उत्पाद एवं बैच विवरण' : '📦 Product & Batch Information'}
+            {hindi ? 'उत्पाद एवं बैच विवरण' : 'Product & Batch Information'}
           </h3>
 
           <div

@@ -436,7 +436,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 }}
               >
                 <span style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>
-                  {hindi ? '💊 सस्ती दवा (Same Salt, Cheaper Brand)' : '💊 Cheaper Alternative (Same Salt)'}
+                  {hindi ? 'सस्ती दवा (Same Salt, Cheaper Brand)' : 'Cheaper Alternative (Same Salt)'}
                 </span>
                 <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
                   {resolved.janAushadhiName}
@@ -517,7 +517,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
               }}
             >
               <MapPin size={20} />
-              {hindi ? '📍 नज़दीकी मेडिकल स्टोर खोजें (Google Maps)' : '📍 Find Nearest Medical Store (Google Maps)'}
+              {hindi ? 'नज़दीकी मेडिकल स्टोर खोजें (Google Maps)' : 'Find Nearest Medical Store (Google Maps)'}
             </button>
           </div>
         </div>
