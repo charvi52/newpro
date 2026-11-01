@@ -65,9 +65,9 @@ The same medicine can be stored separately for different family members. Cabinet
 
 ## Optional services
 
-Supabase enables accounts, cloud cabinet snapshots and consent-based in-app family messages. OpenAI chat/speech requires Supabase sign-in and a private OpenAI API key. Optional GTIN-to-product lookup requires an OpenMRP key and provider coverage. These were not provisioned in this archive. See .env.example and SETUP.md. No secrets are included.
+Supabase enables accounts, cloud cabinet snapshots and consent-based in-app family messages. Optional GTIN-to-product lookup requires an OpenMRP key and provider coverage. These were not provisioned in this archive. See .env.example and SETUP.md. No secrets are included.
 
-AI quota safeguards require the included migration: 6 combined requests/minute, 20 chat/day and 10 speech/day per account (UTC), including failed provider attempts. Family inbox refreshes on focus and every 30 seconds while visible.
+Family inbox refreshes on focus and every 30 seconds while visible.
 
 This remains a prototype, not a clinically validated medical product.
 

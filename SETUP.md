@@ -10,8 +10,6 @@ Create `.env.local` for local development (or use Render Environment settings):
 | --- | --- | --- |
 | `NEXT_PUBLIC_SUPABASE_URL` | cloud cabinet, family, sign-in | Public project URL, available at build time |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | cloud cabinet, family, sign-in | Public **anon** key; never substitute service-role key |
-| `OPENAI_API_KEY` | signed-in AI chat and speech | Private server only; billed separately |
-| `OPENAI_CHAT_MODEL` | optional model choice | Private; default `gpt-4o-mini` |
 | `OPENMRP_API_KEY` | optional GTIN-to-product lookup | Private server only |
 | `DATABASE_URL` | optional catalogue database cache | Private; Render Blueprint supplies this |
 
@@ -28,13 +26,7 @@ The app's `/api/status` route reports boolean availability only and never emits 
 
 **Apply the current supabase/schema.sql before using cloud saves.** Cloud load merges device and remote records. Save requires conflict review and uses a revision-checked RPC. Device edits after review and simultaneous remote edits stop the save rather than silently overwriting them. Sign-out keeps device-local entries and leaves saved cloud records on the server. Local entries are shared within this browser, not isolated by account. Cabinet data is **never** shared by family permissions. Family sharing is in-app only and manual, not proactive regulatory alerting.
 
-## 3. AI assistant
-
-Add private `OPENAI_API_KEY` on the server and restart/redeploy. Signed-in visitors can ask general informational questions in English or Hindi. The question alone is sent to OpenAI; no cabinet entries or family messages are sent. Generated audio comes from the speech API, using the text of the visible reply.
-
-The current SQL migration adds durable per-account quotas: 6 combined chat/speech requests per minute, 20 chat requests/day, 10 speech requests/day (UTC). Reservations are atomic, and failed provider calls also count. Without the migration, paid endpoints fail closed. Owner monitoring, signup abuse controls and provider billing alerts still need deployment-specific configuration. A ChatGPT subscription is **not** an API key.
-
-## 4. India-specific medicine data and official alerts
+## 3. India-specific medicine data and official alerts
 
 Medicine-name search queries are sent to the [Drug Information Service](https://drugdb.in/), which attributes its catalogue to India's Common Drug Codes / NRCeS/C-DAC. The optional [OpenMRP provider](https://openmrp.in/developers) maps some barcodes to products if you obtain its key; product records may be incomplete or outdated. Always verify the physical pack.
 
@@ -47,11 +39,11 @@ MedPro now imports the public portal's structured NSQ/spurious report tables and
 
 This is not an exhaustive recall database or a safety verdict. Distribution/ownership history is unavailable. Spurious-investigation remarks must be read with the original evidence. Missing alerts do not establish safety.
 
-## 5. Barcode coverage
+## 4. Barcode coverage
 
 ZXing decodes supported barcodes locally. A GTIN alone cannot reveal arbitrary batch, expiry or genuine status. Some GS1 symbols carry batch (`10`) and manufacturing date (`11`), expiry (`17`) and serial (`21`) application identifiers. The app never invents missing label fields. If the optional provider doesn't identify a scanned GTIN, search by name or use manual entry. No label-photo OCR is implemented.
 
-## 6. Render and acceptance checklist
+## 5. Deployment and acceptance checklist
 
 ```sh
 corepack pnpm install --frozen-lockfile
@@ -59,7 +51,7 @@ corepack pnpm render:build
 corepack pnpm render:start
 ```
 
-Test on HTTPS: navigation, camera permissions, barcode upload, product search, manual edits, local-storage migration, Supabase two-account RLS, cloud save/load, family revoke, AI availability and billing limits, and CDSCO official outbound links.
+Test on HTTPS: navigation, camera permissions, barcode upload, product search, manual edits, local-storage migration, Supabase two-account RLS, cloud save/load, family revoke, and CDSCO official outbound links.
 
 ## Motion and devices
 
