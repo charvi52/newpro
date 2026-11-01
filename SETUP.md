@@ -1,4 +1,4 @@
-# Carely — connected service setup
+# MedPro — connected service setup
 
 No accounts, projects, external API keys or live deployment are provisioned in this ZIP. **Do not commit real keys**. Features requiring external providers are visibly disabled until configuration is complete; the local cabinet and scanner remain usable.
 
@@ -38,12 +38,12 @@ The current SQL migration adds durable per-account quotas: 6 combined chat/speec
 
 Medicine-name search queries are sent to the [Drug Information Service](https://drugdb.in/), which attributes its catalogue to India's Common Drug Codes / NRCeS/C-DAC. The optional [OpenMRP provider](https://openmrp.in/developers) maps some barcodes to products if you obtain its key; product records may be incomplete or outdated. Always verify the physical pack.
 
-Carely's India alerts page links to two official sources:
+MedPro's India alerts page links to two official sources:
 
 - [CDSCO public NSQ and spurious-drug portal](https://cdscoonline.gov.in/CDSCO/viewPublicNSQDrug)
 - [CDSCO alerts and notices](https://cdsco.gov.in/opencms/opencms/en/Alerts/)
 
-Carely now imports the public portal's structured NSQ/spurious report tables and searches the bundled official history, plus live latest-table refreshes. Run `pnpm run alerts:sync` to rebuild the historical snapshot, then rebuild/redeploy. The full update policy and matching rules are in README.md. `/api/recalls?product=...&manufacturer=...&batch=...` returns results, source evidence, reporting periods and coverage metadata. Name-only or batch-only queries are candidates. All three identifiers must agree for a matching-alert label. No US FDA fallback is used.
+MedPro now imports the public portal's structured NSQ/spurious report tables and searches the bundled official history, plus live latest-table refreshes. Run `pnpm run alerts:sync` to rebuild the historical snapshot, then rebuild/redeploy. The full update policy and matching rules are in README.md. `/api/recalls?product=...&manufacturer=...&batch=...` returns results, source evidence, reporting periods and coverage metadata. Name-only or batch-only queries are candidates. All three identifiers must agree for a matching-alert label. No US FDA fallback is used.
 
 This is not an exhaustive recall database or a safety verdict. Distribution/ownership history is unavailable. Spurious-investigation remarks must be read with the original evidence. Missing alerts do not establish safety.
 

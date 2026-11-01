@@ -4,7 +4,7 @@ Batch number|बैच नंबर
 Expiry|समाप्ति तिथि
 Owner|परिवार सदस्य
 Last checked:|पिछली जाँच:
-Carely home|Carely होम
+MedPro home|MedPro होम
 Main navigation|मुख्य नेविगेशन
 Change language|भाषा बदलें
 Toggle navigation|मेन्यू खोलें या बंद करें
@@ -42,7 +42,7 @@ Only when you say yes.|केवल आपकी सहमति से।
 A LITTLE MORE CLARITY|थोड़ी और स्पष्टता
 Good questions.|ज़रूरी सवाल।
 Straight answers.|सीधे जवाब।
-No hidden claims. Here’s exactly where Carely stands today.|कोई छिपा दावा नहीं। जानें Carely अभी क्या कर सकता है।
+No hidden claims. Here’s exactly where MedPro stands today.|कोई छिपा दावा नहीं। जानें MedPro अभी क्या कर सकता है।
 A small start.|एक छोटी शुरुआत।
 A thoughtful one.|देखभाल के साथ।
 Make it your cabinet|अपनी दवाएँ जोड़ें
@@ -69,13 +69,13 @@ Scan a package, search a medicine name, or enter the details manually.|पैक
 Saved on this device.|इस डिवाइस पर सहेजा गया।
 Cloud saving is optional and requires a signed-in Supabase account. A saved entry is not a safety or authenticity check.|क्लाउड में सहेजना वैकल्पिक है और Supabase खाते में साइन इन करना ज़रूरी है। सहेजना सुरक्षा या असलियत की जाँच नहीं है।
 Little details. People you love.|छोटी जानकारी। आपके अपने।
-About Carely|Carely के बारे में
-Ask Carely AI|Carely AI से पूछें
-© 2026 Carely · Built with care.|© 2026 Carely · देखभाल के साथ बनाया गया।
+About MedPro|MedPro के बारे में
+Ask MedPro AI|MedPro AI से पूछें
+© 2026 MedPro · Built with care.|© 2026 MedPro · देखभाल के साथ बनाया गया।
 CDSCO India: checked report coverage shown|CDSCO भारत: जाँची गई रिपोर्टों का दायरा देखें
 Not medical advice.|यह चिकित्सकीय सलाह नहीं है।
-Open Carely AI assistant|Carely AI सहायक खोलें
-Carely AI|Carely AI
+Open MedPro AI assistant|MedPro AI सहायक खोलें
+MedPro AI|MedPro AI
 Dismiss notification|सूचना बंद करें
 Close dialog|विंडो बंद करें
 SCAN AND CONFIRM|स्कैन करें और पुष्टि करें
@@ -130,13 +130,13 @@ Check official Indian alerts|आधिकारिक भारतीय अल�
 TRANSPARENCY, ALWAYS|हमेशा पारदर्शिता
 An honest start.|एक ईमानदार शुरुआत।
 A clear picture.|एक स्पष्ट तस्वीर।
-Carely is a prototype for storing packaging details and consent-based family awareness.|Carely पैक की जानकारी सहेजने और सहमति से परिवार को जानकारी देने का प्रोटोटाइप है।
+MedPro is a prototype for storing packaging details and consent-based family awareness.|MedPro पैक की जानकारी सहेजने और सहमति से परिवार को जानकारी देने का प्रोटोटाइप है।
 Works without keys|बिना API कुंजी के उपलब्ध
 Camera or photo barcode decoding, manual cabinet entries, locally stored data, and Indian medicine-name search when its public provider is available.|कैमरा या फ़ोटो से बारकोड पढ़ना, खुद दवा जोड़ना और डिवाइस पर सहेजना उपलब्ध है। सार्वजनिक सेवा उपलब्ध होने पर दवा के नाम से खोज भी होती है।
 Requires owner setup|साइट स्वामी का सेटअप आवश्यक
 Cloud accounts and family inbox require Supabase. AI chat and spoken responses require Supabase sign-in and a privately configured OpenAI API key. GTIN identification requires provider coverage and an optional key.|क्लाउड खाते और परिवार इनबॉक्स के लिए Supabase चाहिए। AI और आवाज़ के लिए साइन इन तथा निजी OpenAI API कुंजी चाहिए। GTIN पहचान सेवा के दायरे और कुंजी पर निर्भर है।
 Indian batch-alert limitation|भारतीय बैच अलर्ट की सीमाएँ
-Carely links to live official CDSCO pages. Quality history searches the listed official report tables and shows coverage gaps. It cannot authenticate medicines, provide a complete supply-chain history, recommend treatment, or issue safety verdicts.|Carely आधिकारिक CDSCO स्रोत दिखाता है। गुणवत्ता खोज केवल बताई गई रिपोर्टों तक सीमित है। यह दवा की असलियत, पूरी आपूर्ति श्रृंखला, उपचार या सुरक्षित होने की पुष्टि नहीं करता।
+MedPro links to live official CDSCO pages. Quality history searches the listed official report tables and shows coverage gaps. It cannot authenticate medicines, provide a complete supply-chain history, recommend treatment, or issue safety verdicts.|MedPro आधिकारिक CDSCO स्रोत दिखाता है। गुणवत्ता खोज केवल बताई गई रिपोर्टों तक सीमित है। यह दवा की असलियत, पूरी आपूर्ति श्रृंखला, उपचार या सुरक्षित होने की पुष्टि नहीं करता।
 YOUR DEVICE STORAGE|इस डिवाइस का संग्रह
 Clear your local cabinet?|इस डिवाइस की दवाओं की सूची साफ़ करें?
 This removes local entries from this browser. It does not delete any saved Supabase cloud cabinet or family messages.|इससे ब्राउज़र की स्थानीय सूची हटती है। क्लाउड की सूची और परिवार के संदेश नहीं हटते।
@@ -153,7 +153,7 @@ Sign out|साइन आउट
 Official Indian medicine alerts|आधिकारिक भारतीय दवा अलर्ट
 OFFICIAL INDIA SOURCES|आधिकारिक भारतीय स्रोत
 Check the label. Check the source.|लेबल जाँचें। स्रोत जाँचें।
-Carely is India-first. CDSCO publishes official Not of Standard Quality (NSQ) and spurious-drug alerts. Review the actual entry and the batch number on your pack.|CDSCO मानक गुणवत्ता में विफल (NSQ) और संदिग्ध नकली दवाओं की रिपोर्ट प्रकाशित करता है। मूल रिपोर्ट और अपने पैक का बैच नंबर मिलाएँ।
+MedPro is India-first. CDSCO publishes official Not of Standard Quality (NSQ) and spurious-drug alerts. Review the actual entry and the batch number on your pack.|CDSCO मानक गुणवत्ता में विफल (NSQ) और संदिग्ध नकली दवाओं की रिपोर्ट प्रकाशित करता है। मूल रिपोर्ट और अपने पैक का बैच नंबर मिलाएँ।
 CDSCO official alert lookup|आधिकारिक CDSCO अलर्ट खोज
 India|भारत
 Select a saved medicine to reference|जाँच के लिए सहेजी हुई दवा चुनें
@@ -167,7 +167,7 @@ On the CDSCO website, use the product or batch search and its filters. Compare t
 exact name, batch and manufacturer|सही नाम, बैच और निर्माता
 on your packaging with the official record. If you are unsure what a result means, ask a pharmacist.|। परिणाम समझ न आए तो फ़ार्मासिस्ट से पूछें।
 Only the listed official report tables are checked.|केवल बताई गई आधिकारिक रिपोर्टें जाँची जाती हैं।
-No Carely search result means “safe.” NSQ alerts are not identical to product recalls; always inspect the original official report.|Carely का कोई परिणाम “सुरक्षित” होने की पुष्टि नहीं है। NSQ रिपोर्ट हमेशा रिकॉल नहीं होती। मूल आधिकारिक रिपोर्ट पढ़ें।
+No MedPro search result means “safe.” NSQ alerts are not identical to product recalls; always inspect the original official report.|MedPro का कोई परिणाम “सुरक्षित” होने की पुष्टि नहीं है। NSQ रिपोर्ट हमेशा रिकॉल नहीं होती। मूल आधिकारिक रिपोर्ट पढ़ें।
 Cloud cabinet|क्लाउड में दवाएँ
 Save or retrieve personal medicine entries when signed in. Cloud entries are merged with this device. Review conflicts before confirming a save.|साइन इन करके दवाएँ क्लाउड में सहेजें या लाएँ। सूचियाँ जोड़ी जाती हैं। सहेजने से पहले भिन्न जानकारी जाँचें।
 Load cloud cabinet|क्लाउड की दवाएँ लाएँ
@@ -205,7 +205,7 @@ No published alert matching this search was found in those records.|इन र�
 Possible records are shown below. The supplied details do not establish an exact product, manufacturer and batch match.|संभावित रिपोर्टें नीचे हैं। दी गई जानकारी से उत्पाद, निर्माता और बैच का पूरा मिलान नहीं होता।
 A published quality report matches all three supplied identifiers. Read the evidence below and ask a pharmacist or doctor about treatment.|तीनों जानकारियों से एक प्रकाशित गुणवत्ता रिपोर्ट मिलती है। नीचे प्रमाण पढ़ें और उपचार के लिए फ़ार्मासिस्ट या डॉक्टर से पूछें।
 Searching the official history and checking latest-table availability. A slow or unavailable source will show an explicit error.|आधिकारिक रिपोर्टें खोजी जा रही हैं। स्रोत धीमा या अनुपलब्ध होने पर स्पष्ट संदेश दिखेगा।
-Only the submitted search fields are sent to Carely’s server. CDSCO tables are fetched without your medicine query; photos stay on your device.|केवल भरी गई खोज Carely सर्वर पर जाती है। CDSCO रिपोर्टें आपकी खोज भेजे बिना ली जाती हैं। फ़ोटो आपके डिवाइस पर रहती है।
+Only the submitted search fields are sent to MedPro’s server. CDSCO tables are fetched without your medicine query; photos stay on your device.|केवल भरी गई खोज MedPro सर्वर पर जाती है। CDSCO रिपोर्टें आपकी खोज भेजे बिना ली जाती हैं। फ़ोटो आपके डिवाइस पर रहती है।
 Search evidence and coverage|खोज के प्रमाण और दायरा
 Searched|जाँचे गए:
 official records across|आधिकारिक रिकॉर्ड, कुल
@@ -284,7 +284,7 @@ Save changes|बदलाव सहेजें
 Confirm and save|पुष्टि करें और सहेजें
 YOUR PRIVATE SPACE|आपकी निजी जगह
 SHARING WITH CONSENT|सहमति से साझा करना
-YOUR CARELY ASSISTANT|आपका Carely सहायक
+YOUR MEDPRO ASSISTANT|आपका MedPro सहायक
 Save across devices.|दूसरे डिवाइस पर भी सहेजें।
 Your circle, your permission.|आपके अपने, आपकी अनुमति।
 Ask a real question.|अपना सवाल पूछें।
@@ -326,9 +326,9 @@ export const translate=(text:string)=>hindi[text]||text;
 Object.assign(hindi,{
  'Read the code.':'कोड पढ़ें।','Scan a real barcode, upload a code image, or search by the medicine name.':'असली बारकोड स्कैन करें, कोड की फ़ोटो जोड़ें या दवा के नाम से खोजें।','Check and save.':'जाँचें और सहेजें।','Confirm all fields against your actual pack before saving to your private cabinet.':'निजी सूची में सहेजने से पहले हर जानकारी असली पैक से मिलाएँ।','Bring people in.':'परिवार को जोड़ें।','With an account, invite a family member to your shared-message inbox.':'खाते से परिवार सदस्य को साझा इनबॉक्स में आमंत्रित करें।',
  'Can I save medicine information without an account?':'क्या बिना खाते के दवाओं की जानकारी सहेज सकते हैं?','Yes. Your own entries stay in this browser. If Supabase is configured, you can optionally sign in and save a cloud snapshot.':'हाँ। जानकारी इसी ब्राउज़र में रहती है। Supabase सेटअप हो तो साइन इन करके क्लाउड में भी सहेज सकते हैं।',
- 'Can Carely identify any medicine from its barcode?':'क्या Carely हर दवा को बारकोड से पहचान सकता है?','The scanner can decode common retail and GS1 codes. Barcode-to-product matching depends on provider coverage and a configured optional lookup key. You can also search by the printed medicine name.':'स्कैनर सामान्य बारकोड और GS1 कोड पढ़ता है। उत्पाद की पहचान सेवा के दायरे और कुंजी पर निर्भर है। पैक पर छपे नाम से भी खोज सकते हैं।',
- 'Can Carely check published Indian batch alerts?':'क्या प्रकाशित भारतीय बैच अलर्ट जाँचे जा सकते हैं?','Yes. Use Medicine quality history to search the checked CDSCO NSQ and spurious report tables. A full match requires product, manufacturer and batch agreement. Coverage is shown with every result. No result is a safety verdict.':'हाँ। गुणवत्ता रिपोर्टों में उपलब्ध CDSCO रिकॉर्ड खोजें। पूरे मिलान के लिए उत्पाद, निर्माता और बैच मिलना ज़रूरी है। हर परिणाम में दायरा दिखता है। कोई परिणाम सुरक्षा की पुष्टि नहीं है।',
- 'Will a family member receive a real notification?':'क्या परिवार सदस्य को सूचना मिलेगी?','Authenticated family members can see shared messages inside Carely when Supabase is configured. Email, SMS, WhatsApp, push and automatic recall monitoring are not implemented.':'Supabase सेटअप होने पर साइन इन किए सदस्य Carely में साझा संदेश देख सकते हैं। ईमेल, SMS, WhatsApp, पुश और स्वचालित रिकॉल निगरानी उपलब्ध नहीं हैं।',
+ 'Can MedPro identify any medicine from its barcode?':'क्या MedPro हर दवा को बारकोड से पहचान सकता है?','The scanner can decode common retail and GS1 codes. Barcode-to-product matching depends on provider coverage and a configured optional lookup key. You can also search by the printed medicine name.':'स्कैनर सामान्य बारकोड और GS1 कोड पढ़ता है। उत्पाद की पहचान सेवा के दायरे और कुंजी पर निर्भर है। पैक पर छपे नाम से भी खोज सकते हैं।',
+ 'Can MedPro check published Indian batch alerts?':'क्या प्रकाशित भारतीय बैच अलर्ट जाँचे जा सकते हैं?','Yes. Use Medicine quality history to search the checked CDSCO NSQ and spurious report tables. A full match requires product, manufacturer and batch agreement. Coverage is shown with every result. No result is a safety verdict.':'हाँ। गुणवत्ता रिपोर्टों में उपलब्ध CDSCO रिकॉर्ड खोजें। पूरे मिलान के लिए उत्पाद, निर्माता और बैच मिलना ज़रूरी है। हर परिणाम में दायरा दिखता है। कोई परिणाम सुरक्षा की पुष्टि नहीं है।',
+ 'Will a family member receive a real notification?':'क्या परिवार सदस्य को सूचना मिलेगी?','Authenticated family members can see shared messages inside MedPro when Supabase is configured. Email, SMS, WhatsApp, push and automatic recall monitoring are not implemented.':'Supabase सेटअप होने पर साइन इन किए सदस्य MedPro में साझा संदेश देख सकते हैं। ईमेल, SMS, WhatsApp, पुश और स्वचालित रिकॉल निगरानी उपलब्ध नहीं हैं।',
  'Does the AI work without an API key?':'क्या AI बिना API कुंजी के चलता है?','No. The owner must configure a private OpenAI API key and Supabase sign-in. Scanning, manual entries and medicine-name search remain available without the AI key.':'नहीं। स्वामी को निजी OpenAI कुंजी और Supabase साइन इन सेट करना होगा। स्कैन, खुद प्रविष्टि और नाम से खोज AI कुंजी के बिना भी उपलब्ध हैं।',
  'Camera access was blocked. Allow camera access in your browser settings, or upload a barcode photo.':'कैमरे की अनुमति बंद है। ब्राउज़र सेटिंग में अनुमति दें या बारकोड की फ़ोटो जोड़ें।','No camera was found. Connect a camera or upload a barcode photo.':'कैमरा नहीं मिला। कैमरा जोड़ें या बारकोड की फ़ोटो चुनें।','The camera is in use or could not start. Close other camera apps and try again, or upload a photo.':'कैमरा व्यस्त है या चालू नहीं हुआ। दूसरे कैमरा ऐप बंद करके फिर कोशिश करें या फ़ोटो जोड़ें।','This camera could not use the requested settings. Try a different device or upload a photo.':'कैमरा इन सेटिंग से नहीं चल सका। दूसरा डिवाइस आज़माएँ या फ़ोटो जोड़ें।',
  'Camera is unavailable. Use HTTPS or localhost, check camera permissions, or upload a barcode photo.':'कैमरा उपलब्ध नहीं है। HTTPS या localhost और अनुमति जाँचें, या बारकोड की फ़ोटो जोड़ें।','Choose an image smaller than 15 MB.':'15 MB से छोटी फ़ोटो चुनें।','No supported code was found. Try a clear, well-lit image of the barcode or DataMatrix.':'समर्थित कोड नहीं मिला। बारकोड या DataMatrix की साफ़, उजाले वाली फ़ोटो चुनें।','Medicine added to your cabinet.':'दवा आपकी सूची में जोड़ दी गई।','Medicine details updated.':'दवा की जानकारी बदल दी गई।','Medicine removed.':'दवा हटा दी गई।','Signed out. Medicines saved on this device have been kept.':'साइन आउट हो गया। इस डिवाइस पर सहेजी दवाएँ रखी गई हैं।','Signed in successfully.':'साइन इन हो गया।','No cloud cabinet saved yet.':'अभी क्लाउड में कोई सूची सहेजी नहीं गई है।','Merged cabinet saved to your cloud account.':'जोड़ी गई सूची क्लाउड खाते में सहेज दी गई।',

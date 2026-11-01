@@ -1,4 +1,4 @@
-# Carely offline hackathon demonstration
+# MedPro offline hackathon demonstration
 
 ## Run
 Use Node 22.13+ and pnpm 11.25.0. Install dependencies before going offline:

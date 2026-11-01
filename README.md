@@ -1,6 +1,6 @@
-# Carely — offline safety cards, family demo and premium motion
+# MedPro — offline safety cards, family demo and premium motion
 
-Carely stores medicine pack details, decodes supported barcode/QR photos locally and provides an offline three-card safety panel with bundled CDSCO alerts, bilingual information and illustrative generic price comparisons. Start with [OFFLINE_DEMO.md](OFFLINE_DEMO.md) for the hackathon walkthrough and limitations.
+MedPro stores medicine pack details, decodes supported barcode/QR photos locally and provides an offline three-card safety panel with bundled CDSCO alerts, bilingual information and illustrative generic price comparisons. Start with [OFFLINE_DEMO.md](OFFLINE_DEMO.md) for the hackathon walkthrough and limitations.
 
 ## Start
 
@@ -17,7 +17,7 @@ Open http://localhost:3000. The default portable `pnpm dev` and `pnpm build` wor
 
 ## Light and dark modes
 
-Use the sun/moon switch in the header. Your choice is saved in this browser; before you choose, Carely follows the device theme. Both themes include forms, dialogs, results, notifications and the two motion effects. No images are colour-inverted. The mobile switch retains an accessible label.
+Use the sun/moon switch in the header. Your choice is saved in this browser; before you choose, MedPro follows the device theme. Both themes include forms, dialogs, results, notifications and the two motion effects. No images are colour-inverted. The mobile switch retains an accessible label.
 
 ## Current release
 

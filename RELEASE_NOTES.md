@@ -1,4 +1,4 @@
-# Carely premium motion and reliability release — 30 October 2026
+# MedPro premium motion and reliability release — 30 October 2026
 
 This release retains the existing navigation, typefaces, palette and layout. It adds exactly two decorative motion treatments and fixes the concrete issues found in the prior review. New interface text is limited to functional feedback, cloud-save review, related/catalogue results and Hindi translations.
 

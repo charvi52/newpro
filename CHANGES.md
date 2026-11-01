@@ -1,4 +1,4 @@
-# Carely reliability and honesty fixes — 1 November 2026
+# MedPro reliability and honesty fixes — 1 November 2026
 
 - **Every scan now produces a verdict — no more "no record found" dead end.** The scanner's safety panel distinguishes FLAGGED (exact match in the CDSCO alert records) / CLEARED (a verified negative, quoting the exact 7,005-record count and snapshot date) / NOT FULLY VERIFIABLE (candidate record or missing details), and packs physical evidence checks on the scanned code itself: GS1 check-digit validation, batch capture, and encoded-expiry sanity (`lib/pack-evidence.ts`). A new printable **Verification Slip** (`components/verification-slip.tsx`) renders the verdict, the evidence checklist, and — for unverifiable packs — concrete next steps plus a ready-to-print complaint draft to the state drugs controller / CDSCO / PvPI. Verified-negative wording states explicitly that a cleared check is an absence of alerts, not a certificate of authenticity. 5 new regression tests (63 total).
 
@@ -33,7 +33,7 @@ This release fixes correctness and safety bugs found in a full review, tightens 
 - `drizzle.config.ts` now targets the PostgreSQL engine the project actually uses instead of SQLite; `.env.example` documents `GEMINI_API_KEY`/`GEMINI_MODEL`.
 - Deduplicated the three copy-pasted fetch paths in `SastiDawaFinder`, typed the Gemini/CDSCO responses, removed unused imports and props, and added regression tests for the expiry, barcode, resolver and price-honesty fixes above. Lint errors dropped from 17 to 6; the remaining six are the pre-existing storage-hydration `setState`-in-effect patterns, safe at runtime and due for a restructuring pass.
 
-# Carely premium motion and reliability release — 30 October 2026
+# MedPro premium motion and reliability release — 30 October 2026
 
 This release retains the existing navigation, typefaces, palette and layout. It adds exactly two decorative motion treatments and fixes the concrete issues found in the prior review. New interface text is limited to functional feedback, cloud-save review, related/catalogue results and Hindi translations.
 

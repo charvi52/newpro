@@ -34,7 +34,7 @@ test('legacy migration discards fictional samples while keeping manual entries',
  const old={items:[{...m,origin:undefined},m]};
  assert.deepEqual(restoreLegacy(JSON.stringify(old)),{items:[m]});
 });
-test('reset clears only Carely storage and not unrelated localStorage keys',()=>{
+test('reset clears only MedPro storage and not unrelated localStorage keys',()=>{
  const map=new Map([[STORAGE_KEY,'x'],[LEGACY_STORAGE_KEY,'y'],['other','keep']]);
  assert.deepEqual(resetStorage({removeItem:k=>map.delete(k)}),{items:[]});
  assert.equal(map.get('other'),'keep');
