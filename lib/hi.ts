@@ -324,3 +324,4 @@ Object.assign(hindi,{
 hindi['Medicine names are also sent to Drug Information Service for catalogue candidates.']='कैटलॉग के संभावित परिणामों के लिए दवा के नाम Drug Information Service को भी भेजे जाते हैं।';
 
 Object.assign(hindi,{'Toggle dark mode':'डार्क मोड बदलें','Switch to light mode':'लाइट मोड चालू करें','Switch to dark mode':'डार्क मोड चालू करें','Light':'लाइट','Dark':'डार्क'});
+Object.assign(hindi,{'Dadi Mode on: bigger text and a listen button on every medicine in My cabinet.':'दादी मोड चालू: मेरी दवाएँ में हर दवा पर बड़ा टेक्स्ट और सुनने का बटन।','Dadi Mode off.':'दादी मोड बंद।'});
