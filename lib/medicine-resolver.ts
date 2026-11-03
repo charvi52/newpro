@@ -580,7 +580,15 @@ export function hasLiveSearch(): boolean {
  * Resolve any medicine name (Augmentin, Pan-D, Allegra, etc.) to its active salt,
  * Jan Aushadhi generic equivalent, prices and precautions.
  */
-export async function resolveMedicine(query: string): Promise<ResolvedMedicine | null> {
+/**
+ * Provider-outcome context: when both live Gemini calls fail before any
+ * fallback path runs, callers must be able to tell an engine outage apart
+ * from a genuine not-found verdict. A failed provider must never be
+ * reported to the user as "medicine does not exist".
+ */
+export interface ResolveContext{providerFailed?:boolean}
+
+export async function resolveMedicine(query: string, context?: ResolveContext): Promise<ResolvedMedicine | null> {
   const q = query.trim().toLowerCase();
   // Free-text lookup on a curated brand list: too short a query Matches far too many entries.
   if (q.length < 3) return null;
@@ -656,6 +664,7 @@ Return ONLY a valid JSON object matching:
         if (!geminiRes.ok) {
           const errBody2 = await geminiRes.text().catch(() => '');
           console.error(`[Gemini retry failed] HTTP ${geminiRes.status}: ${errBody2.slice(0, 400)}`);
+          if (context) context.providerFailed = true;
         }
       }
 
@@ -726,6 +735,7 @@ Return ONLY a valid JSON object matching:
       }
     } catch (err) {
       console.error('[Gemini Live Error, fallback to curated DB]', err);
+      if (context) context.providerFailed = true;
     }
   }
 
