@@ -50,3 +50,9 @@ body{background:var(--theme-bg)}.redesigned .site-header{background:#edf8ff;bord
   min-height: 56px !important;
   font-weight: 700 !important;
 }
+
+.dadi-start { padding-block: 3rem; }
+.dadi-start .btn { display: flex; width: min(100%, 24rem); min-height: 56px; margin-block: 1rem; }
+.dadi-pack-photo { width: 96px; height: 76px; object-fit: contain; border-radius: 8px; }
+.pack-photo { min-width: 0; padding: 1rem; border: 1px solid currentColor; border-radius: 12px; }
+.pack-photo img { display: block; max-width: 100%; height: auto; margin-block: .75rem; }

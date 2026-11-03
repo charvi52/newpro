@@ -1,5 +1,5 @@
 /** User-entered pack details are never treated as verified product data. */
-export type Medicine = {product:string;manufacturer:string;strength:string;form:string;release:string;batch:string;origin?:'manual';demo?:boolean;owner?:string;expiry?:string;notes?:string};
+export type Medicine = {product:string;manufacturer:string;strength:string;form:string;release:string;batch:string;origin?:'manual';demo?:boolean;owner?:string;expiry?:string;notes?:string;photo?:string};
 export const fields=['product','manufacturer','strength','form','release','batch'] as const;
 export const norm=(v:string)=>v.trim().replace(/\s+/g,' ').toLowerCase();
 export const ownerKey=(m:Medicine)=>norm(m.owner||'Me')||'me';
@@ -19,7 +19,7 @@ export function validateMedicine(m:Medicine){
 export function restore(raw:string|null):{items:Medicine[]}{
  try{const parsed=JSON.parse(raw||'null');if(!parsed||!Array.isArray(parsed.items))return {items:[]};
  const items:Medicine[]=[];const seen=new Set<string>();
- for(const value of parsed.items){if(!value||value.origin!=='manual'||value.demo||validateMedicine(value))continue;const id=key(value);if(seen.has(id))continue;seen.add(id);items.push({...value,origin:'manual'});}
+ for(const value of parsed.items){if(!value||value.origin!=='manual'||value.demo||validateMedicine(value))continue;const id=key(value);if(seen.has(id))continue;seen.add(id);const photo=typeof value.photo==='string'&&value.photo.length<=280000&&/^data:image\/jpeg;base64,[A-Za-z0-9+/]+=*$/.test(value.photo)?value.photo:undefined;items.push({...value,...(value.photo===undefined?{}:{photo}),origin:'manual'});}
  return {items};
  }catch{return {items:[]};}
 }
