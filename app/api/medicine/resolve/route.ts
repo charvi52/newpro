@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { hasLiveSearch, resolveMedicine } from '@/lib/medicine-resolver';
+import { hasLiveSearch, resolveMedicine, type ResolveContext } from '@/lib/medicine-resolver';
 import { loadOfflineSnapshot, batchStatus } from '@/lib/offline-medical';
 
 export const runtime = 'nodejs';
@@ -70,9 +70,22 @@ async function resolveWithAlerts(q: string, batch: string): Promise<{ body: Reco
     }
 
     // 1. Resolve medicine, generic alternative, and prices
-    const resolved = await resolveMedicine(q);
+    const providerState: ResolveContext = {};
+    const resolved = await resolveMedicine(q, providerState);
 
     if (!resolved) {
+      if (providerState.providerFailed) {
+        // A provider outage is not evidence about the medicine. Report it
+        // honestly and never cache it, so recovery is immediate.
+        return {
+          body: {
+            success: false,
+            error: 'Live medicine search is temporarily unavailable on the server. Popular brands such as Augmentin 625, Pan-D or Dolo 650 remain available from the bundled database — or add the pack to your cabinet manually.',
+            errorHi: 'लाइव दवा खोज इस समय सर्वर पर उपलब्ध नहीं है। Augmentin 625, Pan-D या Dolo 650 जैसी लोकप्रिय दवाएँ बंडल सूची से मिल सकती हैं, या पैक को कैबिनेट में मैन्युअली जोड़ें।',
+          },
+          status: 503,
+        };
+      }
       const notFound = hasLiveSearch()
         ? {
           body: {
