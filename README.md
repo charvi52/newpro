@@ -62,5 +62,4 @@ Optional environment variables (see `.env.example`):
 
 - [OFFLINE_DEMO.md](OFFLINE_DEMO.md) — demo walkthrough and its boundaries
 - [SETUP.md](SETUP.md) — device, HTTPS and motion notes
-- [CHANGES.md](CHANGES.md) — release history
 - [supabase/schema.sql](supabase/schema.sql) — optional cloud schema
