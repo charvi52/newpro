@@ -2,7 +2,7 @@
 
 MedPro is a family medicine companion for Indian households. Save every pack in the house once, then check the details printed on the strip — medicine, manufacturer, batch — against **official CDSCO NSQ and spurious-drug quality-report records**. Each pack gets one of three verdicts with the official source attached, a printable verification slip for the chemist counter, and — in Dadi Mode — large text, pack photos and Hindi read-aloud.
 
-**Live demo:** deployed on Vercel — see the repository About panel.
+**Live demo:** <https://newpro-hackflux1.vercel.app> (deployed on Vercel).
 
 Made by **Charvi Naresh and Sparsh Rana**.
 

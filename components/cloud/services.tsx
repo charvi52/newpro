@@ -6,6 +6,7 @@ import {ArrowUpRight,CheckCircle2,Info,LockKeyhole,Mail,ShieldCheck,TriangleAler
 import type {Medicine} from '@/lib/carely';
 import {restore,mergeCabinets} from '@/lib/carely';
 import MedicineHistory from '@/components/medicine-history';
+import AlertsDataDashboard from '@/components/alerts-data-dashboard';
 import {cloudRequest} from '@/lib/cloud-client';
 
 type ServiceMode='cabinet'|'family'|'alerts';
@@ -120,6 +121,7 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
  return <section className="real-services services-single" aria-label={t(mode==='family'?'Family sharing':'Cloud cabinet')}>
   <div className="services-heading"><span className="eyebrow">{t(mode==='cabinet'?'YOUR PRIVATE SPACE':'SHARING WITH CONSENT')}</span><h2>{t(mode==='cabinet'?'Save across devices.':'Your circle, your permission.')}</h2><p>{t(mode==='cabinet'?'Your cabinet works locally without an account. Cloud syncing is optional.':'Family permissions and shared messages use authenticated accounts, not pretend phone notifications.')}</p></div>
   <div className="service-panels">
+   <AlertsDataDashboard/>
    <article className="service-panel">{account}</article>
    {mode==='cabinet'&&<article className="service-panel">
     <h3>{t("Cloud cabinet")}</h3><p>{t("Save or retrieve personal medicine entries when signed in. Cloud entries are merged with this device. Review conflicts before confirming a save.")}</p>
