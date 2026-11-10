@@ -626,7 +626,10 @@ Return ONLY a valid JSON object matching:
   "precautionHi": string (Safety warning in Hindi)
 }`;
 
-      const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-lite-latest';
+      // Flash-Lite rejects the googleSearch grounding tool, silently degrading every
+      // lookup to memory-sourced prices (which drift call to call). Flash supports
+      // live grounding, so it is the honest default; GEMINI_MODEL can still override.
+      const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-latest';
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
       // googleSearch grounding makes this a genuine live web lookup (real retailer
       // listings) instead of an answer generated from training memory.
