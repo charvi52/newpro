@@ -411,6 +411,25 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 >
                   {hindi ? `बचत ~${resolved.savingsPercent}%` : `Save ~${resolved.savingsPercent}%`}
                 </span>
+                {resolved.source.includes('offline model knowledge') && (
+                  <span
+                    style={{
+                      display: 'inline-block',
+                      padding: '3px 10px',
+                      background: '#fef3c7',
+                      color: '#92400e',
+                      border: '1px solid #fcd34d',
+                      borderRadius: '6px',
+                      fontSize: '0.78rem',
+                      fontWeight: 600,
+                      marginTop: '6px',
+                    }}
+                  >
+                    {hindi
+                      ? 'मेमोरी-आधारित कीमत — केमिस्ट से पुष्टि करें'
+                      : 'Memory-sourced price — confirm with your chemist'}
+                  </span>
+                )}
               </div>
             </div>
 
