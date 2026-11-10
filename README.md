@@ -25,7 +25,7 @@ Dadi Mode (header button) switches to a simplified start screen, bigger type, pa
 ## Honest limits
 
 - The bundled snapshot covers the monthly report tables successfully retrieved; every result lists which tables were checked and which periods are missing.
-- Lower prices in the Sasti Dawa Finder come from a live, source-linked search and are never invented without a source.
+- The Dawa Saathi guide explains a medicine, surfaces a cheaper alternative, and lists batches of that medicine named in official CDSCO alerts. Its prices come from a live, source-linked search and are never invented without a source.
 - Cloud backup and family inbox require optional Supabase configuration; unpanelled states are shown honestly rather than hidden.
 - MedPro is a prototype. It does not authenticate medicines, provide a supply-chain history, or offer medical advice — questions about treatment belong with a pharmacist or doctor.
 
@@ -52,7 +52,7 @@ Optional environment variables (see `.env.example`):
 
 | Key | Purpose |
 |---|---|
-| `GEMINI_API_KEY` | Live, source-linked price search for the Sasti Dawa Finder |
+| `GEMINI_API_KEY` | Live, source-linked price search in the Dawa Saathi guide |
 | `OPENMRP_API_KEY` | Optional barcode-to-product lookup provider |
 | `DATABASE_URL` | Optional PostgreSQL cache for barcode/search responses |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional cloud backup and family inbox |

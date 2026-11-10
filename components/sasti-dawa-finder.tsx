@@ -59,6 +59,25 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
   const [error, setError] = useState('');
   const [chemistSlip, setChemistSlip] = useState<ChemistSlipData | null>(null);
   const [playingVoice, setPlayingVoice] = useState(false);
+  const [relatedBatches, setRelatedBatches] = useState<CdscoMatchedRecord[]>([]);
+  const [relatedTotal, setRelatedTotal] = useState(0);
+  const [packBatch, setPackBatch] = useState('');
+
+  async function loadRelatedBatches(term: string, brand: string) {
+    try {
+      const name = (brand && brand.length >= 2 ? brand : term).trim();
+      if (name.length < 2) { setRelatedBatches([]); setRelatedTotal(0); return; }
+      const response = await fetch('/api/recalls?product=' + encodeURIComponent(name));
+      const data = (await response.json()) as { records?: Array<{ record: CdscoMatchedRecord }>; total?: number; error?: string };
+      if (!response.ok || data.error) { setRelatedBatches([]); setRelatedTotal(0); return; }
+      const list = (data.records || []).map((entry) => entry.record).filter((r) => r && r.batch);
+      setRelatedBatches(list.slice(0, 5));
+      setRelatedTotal(typeof data.total === 'number' ? data.total : list.length);
+    } catch {
+      setRelatedBatches([]);
+      setRelatedTotal(0);
+    }
+  }
 
   async function runSearch(term: string, batchValue = '') {
     if (!term.trim()) return;
@@ -70,6 +89,7 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
       const { resolved: found, cdsco } = await resolveMedicine(term, batchValue);
       setResolved(found);
       setCdscoCheck(cdsco);
+      if (found) void loadRelatedBatches(term, found.brand || '');
       if (!found) setError('No medicine information found.');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Network error');
@@ -271,73 +291,6 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
       {/* Result Cards */}
       {resolved && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          {/* Top Safety / CDSCO Card */}
-          {cdscoCheck && cdscoCheck.checked && (            <div
-              style={{
-                borderRadius: '12px',
-                padding: '1rem',
-                border: cdscoCheck.state === 'matching-alert' ? '2px solid #ef4444' : '1.5px solid #10b981',
-                background: cdscoCheck.state === 'matching-alert' ? '#fef2f2' : '#f0fdf4',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  {cdscoCheck.state === 'matching-alert' ? (
-                    <ShieldAlert size={26} color="#dc2626" />
-                  ) : (
-                    <CheckCircle2 size={24} color="#059669" />
-                  )}
-                  <div>
-                    <strong style={{ fontSize: '1rem', color: cdscoCheck.state === 'matching-alert' ? '#991b1b' : '#065f46' }}>
-                      {hindi ? cdscoCheck.label.hi : cdscoCheck.label.en}
-                    </strong>
-                    <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
-                      {hindi
-                        ? `CDSCO के ${(cdscoCheck.recordCount ?? 0).toLocaleString('en-IN')} आधिकारिक औषधि रिपोर्ट से लाइव मिलान`
-                        : `Cross-checked against ${(cdscoCheck.recordCount ?? 0).toLocaleString('en-IN')} official CDSCO inspection records`}
-                    </p>
-                  </div>
-                </div>
-
-                {cdscoCheck.state === 'matching-alert' && cdscoCheck.matchedRecord && (
-                  <button
-                    onClick={() => {
-                      const matched = cdscoCheck.matchedRecord;
-                      if (!matched) return;
-                      setChemistSlip({
-                        product: resolved.brand,
-                        batch: matched.batch,
-                        manufacturer: matched.manufacturer,
-                        issue: matched.issue,
-                        laboratory: matched.laboratory,
-                        period: matched.period,
-                        reportId: matched.id,
-                        sourceUrl: matched.sourceUrl,
-                      });
-                    }}
-                    type="button"
-                    style={{
-                      background: '#b91c1c',
-                      color: '#ffffff',
-                      border: 'none',
-                      borderRadius: '8px',
-                      padding: '0.55rem 1rem',
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.4rem',
-                    }}
-                  >
-                    <FileText size={16} />
-                    {hindi ? 'केमिस्ट शिकायत पर्ची डाउनलोड करें' : 'Download Chemist Alert Slip'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
           {/* Main Price Comparison & Generic Alternative Card */}
           <div
             style={{
@@ -522,6 +475,123 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
           </div>
         </div>
       )}
+
+          {/* Official verdict card for a supplied batch */}
+          {resolved && cdscoCheck && cdscoCheck.checked && (            <div
+              style={{
+                borderRadius: '12px',
+                padding: '1rem',
+                border: cdscoCheck.state === 'matching-alert' ? '2px solid #ef4444' : '1.5px solid #10b981',
+                background: cdscoCheck.state === 'matching-alert' ? '#fef2f2' : '#f0fdf4',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                  {cdscoCheck.state === 'matching-alert' ? (
+                    <ShieldAlert size={26} color="#dc2626" />
+                  ) : (
+                    <CheckCircle2 size={24} color="#059669" />
+                  )}
+                  <div>
+                    <strong style={{ fontSize: '1rem', color: cdscoCheck.state === 'matching-alert' ? '#991b1b' : '#065f46' }}>
+                      {hindi ? cdscoCheck.label.hi : cdscoCheck.label.en}
+                    </strong>
+                    <p style={{ margin: '2px 0 0', fontSize: '0.82rem', color: '#64748b' }}>
+                      {hindi
+                        ? `CDSCO के ${(cdscoCheck.recordCount ?? 0).toLocaleString('en-IN')} आधिकारिक औषधि रिपोर्ट से लाइव मिलान`
+                        : `Cross-checked against ${(cdscoCheck.recordCount ?? 0).toLocaleString('en-IN')} official CDSCO inspection records`}
+                    </p>
+                  </div>
+                </div>
+
+                {cdscoCheck.state === 'matching-alert' && cdscoCheck.matchedRecord && (
+                  <button
+                    onClick={() => {
+                      const matched = cdscoCheck.matchedRecord;
+                      if (!matched) return;
+                      setChemistSlip({
+                        product: resolved.brand,
+                        batch: matched.batch,
+                        manufacturer: matched.manufacturer,
+                        issue: matched.issue,
+                        laboratory: matched.laboratory,
+                        period: matched.period,
+                        reportId: matched.id,
+                        sourceUrl: matched.sourceUrl,
+                      });
+                    }}
+                    type="button"
+                    style={{
+                      background: '#b91c1c',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '0.55rem 1rem',
+                      fontSize: '0.85rem',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.4rem',
+                    }}
+                  >
+                    <FileText size={16} />
+                    {hindi ? 'केमिस्ट शिकायत पर्ची डाउनलोड करें' : 'Download Chemist Alert Slip'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Batches of this medicine reported in official alerts */}
+          {!busy && relatedBatches.length > 0 && (
+            <div style={{ border: '1.5px solid #fecaca', background: '#fff8f8', borderRadius: '14px', padding: '1.1rem 1.2rem' }}>
+              <strong style={{ fontSize: '1rem', color: '#991b1b', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                <ShieldAlert size={20} /> {hindi ? 'इस दवा के बैच आधिकारिक रिपोर्टों में आए हैं' : 'Batches of this medicine appear in official reports'}
+              </strong>
+              <p style={{ margin: '6px 0 0.8rem', fontSize: '0.85rem', color: '#64748b' }}>
+                {hindi
+                  ? `${relatedTotal.toLocaleString('en-IN')} अलर्ट इस नाम से मिले। हर रिपोर्ट एक विशेष बैच पर है — आपके पैक पर तभी लागू जब आपका बैच नीचे किसी से मेल खाए।`
+                  : `${relatedTotal.toLocaleString('en-IN')} alerts name this medicine. Each finding is tied to one numbered batch — it applies to your pack only if your own batch number matches one below.`}
+              </p>
+              <div style={{ display: 'grid', gap: '0.6rem' }}>
+                {relatedBatches.map((r) => (
+                  <div key={r.id} style={{ background: '#ffffff', border: '1px solid #fecaca', borderRadius: '10px', padding: '0.7rem 0.9rem' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem 1rem', alignItems: 'center' }}>
+                      <span style={{ fontWeight: 800, color: '#0f172a', fontSize: '0.95rem' }}>{r.kind} · {hindi ? 'बैच' : 'Batch'} {r.batch}</span>
+                      <span style={{ fontSize: '0.8rem', color: '#64748b' }}>{r.period}{r.laboratory ? ` · ${r.laboratory}` : ''}</span>
+                    </div>
+                    <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#334155' }}>{r.issue}</p>
+                    <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.8rem', color: '#0f766e', fontWeight: 600 }}>
+                      {hindi ? 'सरकारी रिपोर्ट खोलें' : 'Open the official report'}
+                    </a>
+                  </div>
+                ))}
+              </div>
+              <form
+                onSubmit={(e) => { e.preventDefault(); void runSearch(query, packBatch); }}
+                style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.9rem' }}
+              >
+                <input
+                  type="text"
+                  value={packBatch}
+                  onChange={(e) => setPackBatch(e.target.value)}
+                  placeholder={hindi ? 'अपने पैक का बैच लिखकर तुरंत जाँचें…' : "Type YOUR pack's batch to check it…"}
+                  style={{ flex: '1 1 220px', padding: '0.7rem 0.9rem', borderRadius: '10px', border: '1.5px solid #fca5a5', fontSize: '0.95rem' }}
+                />
+                <button
+                  type="submit"
+                  style={{ padding: '0.7rem 1.2rem', background: '#b91c1c', color: '#ffffff', border: 'none', borderRadius: '10px', fontWeight: 600, cursor: 'pointer' }}
+                >
+                  {hindi ? 'मेरा पैक जाँचें' : 'Check my own pack'}
+                </button>
+              </form>
+              <p style={{ margin: '8px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                {hindi ? 'जाँच के बाद ऊपर का कार्ड आपके बैच का निर्णय दिखाएगा। यह सरकारी आर्काइव से बैच-स्तरीय मिलान है — अनुमान नहीं।' : 'After checking, the card above shows the verdict for your exact batch. Batch-level linkage from the government archive — data, not an AI guess.'}
+              </p>
+            </div>
+          )}
+
 
       {/* Chemist Alert Slip Modal */}
       {chemistSlip && (
