@@ -119,9 +119,16 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
     window.speechSynthesis.cancel();
     setPlayingVoice(true);
 
+    const priceLineHi = resolved.priceVerified === false
+      ? 'कीमत अभी सत्यापित नहीं है, कृपया केमिस्ट से मौजूदा दाम पूछें।'
+      : `इसकी सस्ती दवा ${resolved.janAushadhiName} है जो केवल ₹${resolved.genericPrice} में मिलती है।`;
+    const priceLineEn = resolved.priceVerified === false
+      ? 'The price is not verified yet, please ask your chemist for the current rate.'
+      : `A cheaper alternative is ${resolved.janAushadhiName} at just ₹${resolved.genericPrice}.`;
+
     const speechText = hindi
-      ? `यह दवा ${resolved.brand} है। इसका साल्ट ${resolved.salt} है। यह ${resolved.purpose.hi} के लिए है। इसे ${resolved.timing.hi}। इसकी सस्ती दवा ${resolved.janAushadhiName} है जो केवल ₹${resolved.genericPrice} में मिलती है।`
-      : `This medicine is ${resolved.brand}. Active salt is ${resolved.salt}. Used for ${resolved.purpose.en}. ${resolved.timing.en}. A cheaper alternative is ${resolved.janAushadhiName} at just ₹${resolved.genericPrice}.`;
+      ? `यह दवा ${resolved.brand} है। इसका साल्ट ${resolved.salt} है। यह ${resolved.purpose.hi} के लिए है। इसे ${resolved.timing.hi}। ${priceLineHi}`
+      : `This medicine is ${resolved.brand}. Active salt is ${resolved.salt}. Used for ${resolved.purpose.en}. ${resolved.timing.en}. ${priceLineEn}`;
 
     const utterance = new SpeechSynthesisUtterance(speechText);
     utterance.lang = hindi ? 'hi-IN' : 'en-IN';
@@ -372,11 +379,18 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                   {hindi ? 'ब्रांडेड बाज़ार कीमत (MRP)' : 'Branded Market Price (MRP)'}
                 </span>
                 <div style={{ fontSize: '1.5rem', fontWeight: 700, color: '#334155', marginTop: '4px' }}>
-                  ₹{resolved.brandPrice.toFixed(2)}
+                  {resolved.priceVerified === false
+                    ? <span style={{ color: '#94a3b8' }}>₹ —</span>
+                    : `₹${resolved.brandPrice.toFixed(2)}`}
                 </div>
                 <small style={{ color: '#64748b' }}>
                   {resolved.brand} ({resolved.form})
                 </small>
+                {resolved.priceVerified === false && (
+                  <small style={{ display: 'block', color: '#92400e', marginTop: '4px', fontWeight: 600 }}>
+                    {hindi ? 'लाइव कीमत अभी उपलब्ध नहीं' : 'Live price lookup temporarily unavailable'}
+                  </small>
+                )}
               </div>
 
               {/* Cheaper Alternative Medicine */}
@@ -391,44 +405,35 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 <span style={{ fontSize: '0.82rem', color: '#047857', fontWeight: 600 }}>
                   {hindi ? 'सस्ती दवा (Same Salt, Cheaper Brand)' : 'Cheaper Alternative (Same Salt)'}
                 </span>
-                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
-                  {resolved.janAushadhiName}
-                </div>
-                <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#065f46', marginTop: '4px' }}>
-                  ₹{resolved.genericPrice.toFixed(2)}
-                </div>
-                <span
-                  style={{
-                    display: 'inline-block',
-                    padding: '3px 10px',
-                    background: '#059669',
-                    color: '#ffffff',
-                    borderRadius: '6px',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    marginTop: '4px',
-                  }}
-                >
-                  {hindi ? `बचत ~${resolved.savingsPercent}%` : `Save ~${resolved.savingsPercent}%`}
-                </span>
-                {resolved.source.includes('offline model knowledge') && (
-                  <span
-                    style={{
-                      display: 'inline-block',
-                      padding: '3px 10px',
-                      background: '#fef3c7',
-                      color: '#92400e',
-                      border: '1px solid #fcd34d',
-                      borderRadius: '6px',
-                      fontSize: '0.78rem',
-                      fontWeight: 600,
-                      marginTop: '6px',
-                    }}
-                  >
+                {resolved.priceVerified === false ? (
+                  <p style={{ margin: '10px 0 0', fontSize: '0.88rem', color: '#92400e', fontWeight: 600, lineHeight: 1.45 }}>
                     {hindi
-                      ? 'मेमोरी-आधारित कीमत — केमिस्ट से पुष्टि करें'
-                      : 'Memory-sourced price — confirm with your chemist'}
-                  </span>
+                      ? 'कीमत सत्यापित नहीं है — लाइव खोज अस्थायी रूप से बंद है। हम अनुमान नहीं दिखाते; कृपया केमिस्ट से मौजूदा MRP पूछें।'
+                      : 'Price not verified — live search is temporarily unavailable. We do not show estimates; please ask your chemist for the current MRP.'}
+                  </p>
+                ) : (
+                  <>
+                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginTop: '6px' }}>
+                      {resolved.janAushadhiName}
+                    </div>
+                    <div style={{ fontSize: '1.65rem', fontWeight: 800, color: '#065f46', marginTop: '4px' }}>
+                      ₹{resolved.genericPrice.toFixed(2)}
+                    </div>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '3px 10px',
+                        background: '#059669',
+                        color: '#ffffff',
+                        borderRadius: '6px',
+                        fontSize: '0.8rem',
+                        fontWeight: 700,
+                        marginTop: '4px',
+                      }}
+                    >
+                      {hindi ? `बचत ~${resolved.savingsPercent}%` : `Save ~${resolved.savingsPercent}%`}
+                    </span>
+                  </>
                 )}
               </div>
             </div>
