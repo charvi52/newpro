@@ -628,10 +628,10 @@ Return ONLY a valid JSON object matching:
   "precautionHi": string (Safety warning in Hindi)
 }`;
 
-      // Flash-Lite rejects the googleSearch grounding tool, silently degrading every
-      // lookup to memory-sourced prices (which drift call to call). Flash supports
-      // live grounding, so it is the honest default; GEMINI_MODEL can still override.
-      const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      // Gemini 3.x is the current generation on AI Studio keys: the 2.5 family is
+      // still listed by ListModels but sunsetting keys receive HTTP 404 on it
+      // (observed 10 Nov 2026). 3.x Flash supports the googleSearch grounding tool.
+      const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
       const fallbackModel = 'gemini-flash-lite-latest';
       // googleSearch grounding makes this a genuine live web lookup (real retailer
       // listings) instead of an answer generated from training memory.
