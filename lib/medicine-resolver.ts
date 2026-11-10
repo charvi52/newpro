@@ -629,12 +629,12 @@ Return ONLY a valid JSON object matching:
       // Flash-Lite rejects the googleSearch grounding tool, silently degrading every
       // lookup to memory-sourced prices (which drift call to call). Flash supports
       // live grounding, so it is the honest default; GEMINI_MODEL can still override.
-      const geminiModel = process.env.GEMINI_MODEL || 'gemini-flash-latest';
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent`;
+      const primaryModel = process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+      const fallbackModel = 'gemini-flash-lite-latest';
       // googleSearch grounding makes this a genuine live web lookup (real retailer
       // listings) instead of an answer generated from training memory.
-      const callGemini = (useSearch: boolean) => fetch(
-        endpoint,
+      const callGemini = (model: string, useSearch: boolean) => fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
         {
           method: 'POST',
           // Auth must ride in the x-goog-api-key header, not a ?key= URL param:
@@ -654,7 +654,7 @@ Return ONLY a valid JSON object matching:
       );
 
       let liveSourced = true;
-      let geminiRes = await callGemini(true);
+      let geminiRes = await callGemini(primaryModel, true);
       if (!geminiRes.ok) {
         // Surface auth/quota failures clearly: some AQ.-format keys still hit
         // API_KEY_SERVICE_BLOCKED while Google rolls out the new key type.
@@ -663,11 +663,18 @@ Return ONLY a valid JSON object matching:
         // Grounding can fail (quota exhausted, model without tool support). Retry once
         // from model memory, but label the source honestly instead of claiming search.
         liveSourced = false;
-        geminiRes = await callGemini(false);
+        geminiRes = await callGemini(primaryModel, false);
         if (!geminiRes.ok) {
           const errBody2 = await geminiRes.text().catch(() => '');
           console.error(`[Gemini retry failed] HTTP ${geminiRes.status}: ${errBody2.slice(0, 400)}`);
-          if (context) context.providerFailed = true;
+          // Last resort: a model that has served memory answers on this key before.
+          // Degraded-but-honest beats a dead endpoint for families checking a pack.
+          geminiRes = await callGemini(fallbackModel, false);
+          if (!geminiRes.ok) {
+            const errBody3 = await geminiRes.text().catch(() => '');
+            console.error(`[Gemini fallback model failed] HTTP ${geminiRes.status}: ${errBody3.slice(0, 400)}`);
+            if (context) context.providerFailed = true;
+          }
         }
       }
 
