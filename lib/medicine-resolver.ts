@@ -590,10 +590,49 @@ export function hasLiveSearch(): boolean {
  */
 export interface ResolveContext{providerFailed?:boolean}
 
+type PopularMedicine = (typeof POPULAR_INDIAN_MEDICINES)[number];
+
+function curatedMedicineResult(query: string, item: PopularMedicine): ResolvedMedicine {
+  const savings = Math.max(0, Math.round(((item.brandPrice - item.genericPrice) / item.brandPrice) * 100));
+  return {
+    query,
+    matchedName: item.brands[0].toUpperCase(),
+    brand: item.brands[0].toUpperCase(),
+    salt: item.salt,
+    strength: item.strength,
+    form: item.form,
+    manufacturer: 'Indian Branded Market (CDSCO Registered)',
+    brandPrice: item.brandPrice,
+    genericPrice: item.genericPrice,
+    savingsPercent: savings,
+    janAushadhiName: item.janAushadhiName,
+    janAushadhiCode: item.janAushadhiCode,
+    purpose: { en: item.purposeEn, hi: item.purposeHi },
+    timing: { en: item.timingEn, hi: item.timingHi },
+    precaution: { en: item.precautionEn, hi: item.precautionHi },
+    source: 'Curated Pharmacopoeia Database',
+    sourceUrl: 'https://janaushadhi.gov.in/',
+    priceVerified: true,
+  };
+}
+
 export async function resolveMedicine(query: string, context?: ResolveContext): Promise<ResolvedMedicine | null> {
   const q = query.trim().toLowerCase();
   // Free-text lookup on a curated brand list: too short a query Matches far too many entries.
   if (q.length < 3) return null;
+
+  // 0. Bundled exact-brand match answers instantly with verified prices: no
+  // provider latency, no quota burn. Looser matches stay in the post-provider
+  // fallback so novel phrasings still get a chance at live grounding.
+  for (const item of POPULAR_INDIAN_MEDICINES) {
+    const exactBrand = item.brands.some((b) => {
+      const lb = b.toLowerCase();
+      return q === lb || q.startsWith(lb + ' ');
+    });
+    if (exactBrand) {
+      return curatedMedicineResult(query, item);
+    }
+  }
 
   // 1. Google Gemini AI: Direct live internet search for any medicine worldwide
   const geminiKey = process.env.GEMINI_API_KEY;
@@ -651,36 +690,48 @@ Return ONLY a valid JSON object matching:
               temperature: 0.1,
             },
           }),
-          signal: AbortSignal.timeout(15000),
+          signal: AbortSignal.timeout(25000),
         }
       );
 
+      // Thinking-capable 3.x models can legitimately exceed short serverless
+      // budgets, so timeouts must be treated as "try next link in the chain",
+      // not as a fatal error.
       let liveSourced = true;
-      let geminiRes = await callGemini(primaryModel, true);
-      if (!geminiRes.ok) {
+      let geminiRes: Response | null = null;
+      try {
+        geminiRes = await callGemini(primaryModel, true);
+      } catch (groundedErr) {
+        console.error('[Gemini grounded call threw]', groundedErr instanceof Error ? groundedErr.message : groundedErr);
+      }
+      if (geminiRes && !geminiRes.ok) {
         // Surface auth/quota failures clearly: some AQ.-format keys still hit
         // API_KEY_SERVICE_BLOCKED while Google rolls out the new key type.
         const errBody = await geminiRes.text().catch(() => '');
         console.error(`[Gemini search call failed] HTTP ${geminiRes.status}: ${errBody.slice(0, 400)}`);
-        // Grounding can fail (quota exhausted, model without tool support). Retry once
-        // from model memory, but label the source honestly instead of claiming search.
         liveSourced = false;
-        geminiRes = await callGemini(primaryModel, false);
-        if (!geminiRes.ok) {
-          const errBody2 = await geminiRes.text().catch(() => '');
-          console.error(`[Gemini retry failed] HTTP ${geminiRes.status}: ${errBody2.slice(0, 400)}`);
-          // Last resort: a model that has served memory answers on this key before.
-          // Degraded-but-honest beats a dead endpoint for families checking a pack.
+        geminiRes = null;
+      }
+      if (!geminiRes) {
+        // Grounded attempt failed or timed out. Skip the slow primary-memory retry:
+        // 3.x thinking models can exceed the remaining serverless budget. The lite
+        // model answers quickly from memory, and unverified prices are hidden in the
+        // UI anyway, so memory answers only contribute purpose/timing guidance.
+        liveSourced = false;
+        try {
           geminiRes = await callGemini(fallbackModel, false);
-          if (!geminiRes.ok) {
-            const errBody3 = await geminiRes.text().catch(() => '');
-            console.error(`[Gemini fallback model failed] HTTP ${geminiRes.status}: ${errBody3.slice(0, 400)}`);
-            if (context) context.providerFailed = true;
-          }
+        } catch (memoryErr) {
+          console.error('[Gemini memory call threw]', memoryErr instanceof Error ? memoryErr.message : memoryErr);
+        }
+        if (geminiRes && !geminiRes.ok) {
+          const errBody2 = await geminiRes.text().catch(() => '');
+          console.error(`[Gemini fallback model failed] HTTP ${geminiRes.status}: ${errBody2.slice(0, 400)}`);
+          if (context) context.providerFailed = true;
+          geminiRes = null;
         }
       }
 
-      if (geminiRes.ok) {
+      if (geminiRes && geminiRes.ok) {
         const json = (await geminiRes.json()) as {
           candidates?: Array<{
             content?: { parts?: Array<{ text?: string }> };
@@ -759,27 +810,7 @@ Return ONLY a valid JSON object matching:
     const brandMatch = item.brands.some((b) => q === b || q.startsWith(b) || b.startsWith(q));
     const saltMatch = q.length >= 4 && (item.salt.toLowerCase().includes(q) || q.includes(item.salt.toLowerCase()));
     if (brandMatch || saltMatch) {
-      const savings = Math.max(0, Math.round(((item.brandPrice - item.genericPrice) / item.brandPrice) * 100));
-      return {
-        query,
-        matchedName: item.brands[0].toUpperCase(),
-        brand: item.brands[0].toUpperCase(),
-        salt: item.salt,
-        strength: item.strength,
-        form: item.form,
-        manufacturer: 'Indian Branded Market (CDSCO Registered)',
-        brandPrice: item.brandPrice,
-        genericPrice: item.genericPrice,
-        savingsPercent: savings,
-        janAushadhiName: item.janAushadhiName,
-        janAushadhiCode: item.janAushadhiCode,
-        purpose: { en: item.purposeEn, hi: item.purposeHi },
-        timing: { en: item.timingEn, hi: item.timingHi },
-        precaution: { en: item.precautionEn, hi: item.precautionHi },
-        source: 'Curated Pharmacopoeia Database',
-        sourceUrl: 'https://janaushadhi.gov.in/',
-        priceVerified: true,
-      };
+      return curatedMedicineResult(query, item);
     }
   }
 
