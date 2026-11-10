@@ -686,7 +686,11 @@ Return ONLY a valid JSON object matching:
             contents: [{ parts: [{ text: geminiPrompt }] }],
             ...(useSearch ? { tools: [{ googleSearch: {} }] } : {}),
             generationConfig: {
-              responseMimeType: 'application/json',
+              // JSON output mode and the googleSearch tool are mutually exclusive
+              // on current models: sending both fails every grounded request while
+              // the same prompt without tools succeeds. Grounded calls therefore
+              // rely on the prompt's "return ONLY a valid JSON object" instruction.
+              ...(useSearch ? {} : { responseMimeType: 'application/json' }),
               temperature: 0.1,
             },
           }),
@@ -741,7 +745,10 @@ Return ONLY a valid JSON object matching:
         const textContent = json.candidates?.[0]?.content?.parts?.[0]?.text;
         const webChunk = json.candidates?.[0]?.groundingMetadata?.groundingChunks?.find((c) => c.web?.uri)?.web;
         if (textContent) {
-          const parsed = JSON.parse(textContent) as {
+          // Grounded calls cannot use responseMimeType:application/json (see
+          // callGemini), so the text may arrive wrapped in a markdown fence.
+          const cleaned = textContent.trim().replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/, '');
+          const parsed = JSON.parse(cleaned) as {
             notFound?: boolean;
             brand?: string; salt?: string; strength?: string; form?: string;
             brandPrice?: number; cheaperPrice?: number; cheaperBrand?: string;
