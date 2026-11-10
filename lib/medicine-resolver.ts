@@ -672,10 +672,22 @@ Return ONLY a valid JSON object matching:
       // (observed 10 Nov 2026). 3.x Flash supports the googleSearch grounding tool.
       const primaryModel = process.env.GEMINI_MODEL || 'gemini-3.8-flash';
       const fallbackModel = 'gemini-flash-lite-latest';
-      // googleSearch grounding makes this a genuine live web lookup (real retailer
-      // listings) instead of an answer generated from training memory.
-      const callGemini = (model: string, useSearch: boolean) => fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
+      // Google has changed the grounding tool shape and API path across
+      // generations: 1.x/2.0 used googleSearchRetrieval on v1beta, 2.5+ uses
+      // googleSearch, and both v1 and v1beta serve generateContent. Rather than
+      // guessing which one a given key tier accepts, try each in order — a wrong
+      // shape fails fast, and the chain below absorbs every failure honestly.
+      const groundedVariants: Array<{ label: string; path: string; tools: Record<string, object> }> = [
+        { label: 'googleSearch@v1beta', path: 'v1beta', tools: { googleSearch: {} } },
+        { label: 'googleSearch@v1', path: 'v1', tools: { googleSearch: {} } },
+        { label: 'googleSearchRetrieval@v1beta', path: 'v1beta', tools: { googleSearchRetrieval: {} } },
+      ];
+      // JSON output mode and the googleSearch tool are mutually exclusive on
+      // current models: sending both fails every grounded request while the same
+      // prompt without tools succeeds. Grounded calls therefore rely on the
+      // prompt's "return ONLY a valid JSON object" instruction.
+      const callGemini = (model: string, useSearch: boolean, variant?: { path: string; tools: Record<string, object> }) => fetch(
+        `https://generativelanguage.googleapis.com/${variant ? variant.path : 'v1beta'}/models/${model}:generateContent`,
         {
           method: 'POST',
           // Auth must ride in the x-goog-api-key header, not a ?key= URL param:
@@ -684,13 +696,9 @@ Return ONLY a valid JSON object matching:
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': geminiKey },
           body: JSON.stringify({
             contents: [{ parts: [{ text: geminiPrompt }] }],
-            ...(useSearch ? { tools: [{ googleSearch: {} }] } : {}),
+            ...(variant ? { tools: [variant.tools] } : {}),
             generationConfig: {
-              // JSON output mode and the googleSearch tool are mutually exclusive
-              // on current models: sending both fails every grounded request while
-              // the same prompt without tools succeeds. Grounded calls therefore
-              // rely on the prompt's "return ONLY a valid JSON object" instruction.
-              ...(useSearch ? {} : { responseMimeType: 'application/json' }),
+              ...(variant ? {} : { responseMimeType: 'application/json' }),
               temperature: 0.1,
             },
           }),
@@ -703,19 +711,20 @@ Return ONLY a valid JSON object matching:
       // not as a fatal error.
       let liveSourced = true;
       let geminiRes: Response | null = null;
-      try {
-        geminiRes = await callGemini(primaryModel, true);
-      } catch (groundedErr) {
-        console.error('[Gemini grounded call threw]', groundedErr instanceof Error ? groundedErr.message : groundedErr);
+      for (const variant of groundedVariants) {
+        try {
+          const attempt = await callGemini(primaryModel, true, variant);
+          if (attempt.ok) {
+            geminiRes = attempt;
+            break;
+          }
+          const errBody = await attempt.text().catch(() => '');
+          console.error(`[Gemini grounded ${variant.label} failed] HTTP ${attempt.status}: ${errBody.slice(0, 300)}`);
+        } catch (groundedErr) {
+          console.error(`[Gemini grounded ${variant.label} threw]`, groundedErr instanceof Error ? groundedErr.message : groundedErr);
+        }
       }
-      if (geminiRes && !geminiRes.ok) {
-        // Surface auth/quota failures clearly: some AQ.-format keys still hit
-        // API_KEY_SERVICE_BLOCKED while Google rolls out the new key type.
-        const errBody = await geminiRes.text().catch(() => '');
-        console.error(`[Gemini search call failed] HTTP ${geminiRes.status}: ${errBody.slice(0, 400)}`);
-        liveSourced = false;
-        geminiRes = null;
-      }
+      if (geminiRes === null) liveSourced = false;
       if (!geminiRes) {
         // Grounded attempt failed or timed out. Skip the slow primary-memory retry:
         // 3.x thinking models can exceed the remaining serverless budget. The lite
