@@ -16,6 +16,8 @@ export interface ResolvedMedicine {
   precaution: { en: string; hi: string };
   source: string;
   sourceUrl: string;
+  /** False when prices come from model memory instead of a verified source; UI must not show them as fact. */
+  priceVerified?: boolean;
   isOnlineCandidate?: boolean;
 }
 
@@ -739,6 +741,9 @@ Return ONLY a valid JSON object matching:
                 ? `Google Gemini live web search${webChunk?.title ? ` — ${webChunk.title}` : ''}`
                 : 'Google Gemini (offline model knowledge)',
               sourceUrl: webChunk?.uri || 'https://generativelanguage.google.com/',
+              // Memory answers drift call to call (the same lookup has returned
+              // ₹125 and ₹340 for one product). They are not evidence of an MRP.
+              priceVerified: liveSourced,
             };
           }
         }
@@ -773,6 +778,7 @@ Return ONLY a valid JSON object matching:
         precaution: { en: item.precautionEn, hi: item.precautionHi },
         source: 'Curated Pharmacopoeia Database',
         sourceUrl: 'https://janaushadhi.gov.in/',
+        priceVerified: true,
       };
     }
   }
