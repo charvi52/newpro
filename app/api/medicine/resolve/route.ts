@@ -3,6 +3,9 @@ import { hasLiveSearch, resolveMedicine, type ResolveContext } from '@/lib/medic
 import { loadOfflineSnapshot, batchStatus } from '@/lib/offline-medical';
 
 export const runtime = 'nodejs';
+// Grounded search on thinking-capable models can take 20s+; the default
+// serverless budget is shorter than two sequential attempts need.
+export const maxDuration = 60;
 
 /**
  * Resolve results (including honest 404s) are cached in memory so repeated or
