@@ -1,5 +1,5 @@
 /* Only the app shell and same-origin static files are cached. Never cache API or account data. */
-const CACHE='carely-sky-v3';
+const CACHE='carely-sky-v12';
 const staticPath=p=>p.startsWith('/_next/static/')||p.startsWith('/assets/')||p.startsWith('/images/')||/\.(?:js|css|woff2?|webp|png|svg|ico)$/.test(p);
 self.addEventListener('install',()=>self.skipWaiting());
 self.addEventListener('activate',event=>event.waitUntil(self.clients.claim()));

@@ -1,11 +1,11 @@
 'use client';
 import {useEffect,useState} from 'react';
 import {ArrowUpRight,Heart,Shield,Plus} from 'lucide-react';
-import {SkyHero,SceneStory,CompanionSection} from './sky-experience';
+import {SceneStory,CompanionSection} from './sky-experience';
 import {useI18n} from './language';
 const clamp=(n:number)=>Math.min(1,Math.max(0,n));
-type Props={onCabinet:()=>void;onScan:()=>void;onAlerts:()=>void;onSample:()=>void;onSearch?:(q:string)=>void};
-export default function EditorialHome({onCabinet,onScan,onAlerts,onSample,onSearch}:Props){
+type Props={onCabinet:()=>void;onAlerts:()=>void;onSample:()=>void;};
+export default function EditorialHome({onCabinet,onAlerts,onSample}:Props){
  const {hindi}=useI18n();const t=(en:string,hi:string)=>hindi?hi:en;
  const [faq,setFaq]=useState<number|null>(null);
  useEffect(()=>{const root=document.querySelector('.editorial-home');if(!root)return;const nodes=root.querySelectorAll('[data-reveal]');const observer=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting){e.target.classList.add('is-revealed');observer.unobserve(e.target);}}),{threshold:.12});nodes.forEach(n=>observer.observe(n));return()=>observer.disconnect();},[]);
@@ -22,12 +22,11 @@ export default function EditorialHome({onCabinet,onScan,onAlerts,onSample,onSear
   [t('Should I change my medicine after an alert?','अलर्ट मिलने पर क्या दवा बदलनी चाहिए?'),t('Show the exact report and your pack to your doctor or pharmacist. Do not stop or change treatment on your own.','सटीक रिपोर्ट और अपना पैक डॉक्टर या फार्मासिस्ट को दिखाएँ। अपनी मर्ज़ी से इलाज बंद या बदलें नहीं।')]
  ];
  return <div className="editorial-home">
- <SkyHero onCabinet={onCabinet} onScan={onScan} onSample={onSample} onSearch={onSearch}/>
  <section className="e-statement e-wrap" data-reveal><p className="e-kicker">{t('LESS TO REMEMBER. MORE ROOM TO CARE.','याद रखने की चिंता कम। देखभाल के लिए समय ज़्यादा।')}</p><h2 data-reading aria-label={t('The official report exists. Matching it to your pack is where families get stuck.','सरकारी रिपोर्ट पहले से मौजूद है। उसे अपने पैक से जोड़ना ही असली दिक्कत है।')}><span aria-hidden="true">{readingWords(t('The official report exists.','सरकारी रिपोर्ट पहले से मौजूद है।'))}<br/>{readingWords(t('Matching it to your pack','उसे अपने पैक से'))}<br/>{readingWords(t('is where families','जोड़ना ही'))} <em>{readingWords(t('get stuck.','असली दिक्कत है।'))}</em></span></h2><p>{t('One thoughtful space for the label, the batch, the evidence—and the people behind every pack.','दवा के लेबल, बैच, प्रमाण और हर पैक के पीछे के अपने के लिए एक आसान जगह।')}</p></section>
  <SceneStory onCabinet={onCabinet} onAlerts={onAlerts} onSample={onSample}/>
  <CompanionSection onCabinet={onCabinet}/>
  <section className="e-honesty e-wrap" data-reveal><span className="e-honesty-icon"><Shield size={35} strokeWidth={1.4}/></span><div><p className="e-kicker">{t('CARE WITHOUT OVERCLAIMING','बड़े दावों के बिना देखभाल')}</p><h2>{t('A clearer picture.','एक स्पष्ट तस्वीर।')}<br/><em>{t('Never a false promise.','झूठा भरोसा कभी नहीं।')}</em></h2><p>{t('An alert check is one piece of the picture. MedPro does not certify a medicine as safe or genuine. Treatment decisions belong with your doctor or pharmacist.','अलर्ट की जाँच पूरी तस्वीर का एक हिस्सा है। MedPro दवा की सुरक्षा या असली होने का प्रमाण नहीं देता। इलाज का निर्णय डॉक्टर या फार्मासिस्ट के साथ करें।')}</p></div><button className="e-text-button" onClick={onAlerts}>{t('See the evidence','प्रमाण देखें')}<ArrowUpRight size={22}/></button></section>
- <section className="e-faq e-wrap" data-reveal><div><p className="e-kicker">{t('GOOD TO KNOW','जानना ज़रूरी है')}</p><h2>{t('A few questions,','कुछ सवाल,')}<br/><em>{t('answered simply.','आसान जवाब।')}</em></h2></div><div>{questions.map(([q,a],i)=><div className="e-faq-row" key={q}><h3><button onClick={()=>setFaq(faq===i?null:i)} aria-expanded={faq===i} aria-controls={'e-faq-'+i}>{q}<Plus size={23} style={{rotate:faq===i?'45deg':'0deg'}}/></button></h3><div id={'e-faq-'+i} hidden={faq!==i}><p>{a}</p></div></div>)}</div></section>
+ <section id="medpro-faq" className="e-faq e-wrap" aria-label={t("Frequently asked questions","अक्सर पूछे जाने वाले सवाल")} tabIndex={-1} data-reveal><div><p className="e-kicker">{t('GOOD TO KNOW','जानना ज़रूरी है')}</p><h2>{t('A few questions,','कुछ सवाल,')}<br/><em>{t('answered simply.','आसान जवाब।')}</em></h2></div><div>{questions.map(([q,a],i)=><div className="e-faq-row" key={q}><h3><button onClick={()=>setFaq(faq===i?null:i)} aria-expanded={faq===i} aria-controls={'e-faq-'+i}>{q}<Plus size={23} style={{rotate:faq===i?'45deg':'0deg'}}/></button></h3><div id={'e-faq-'+i} hidden={faq!==i}><p>{a}</p></div></div>)}</div></section>
  <section className="e-final"><div className="e-wrap"><Heart size={34} strokeWidth={1.5}/><p className="e-kicker">{t('START WITH ONE SMALL THING','एक छोटी शुरुआत करें')}</p><h2>{t('Check one pack','आज एक पैक')}<br/><em>{t('today.','जाँचें।')}</em></h2><button className="e-primary" onClick={onCabinet}>{t('Open my cabinet','मेरी दवाएँ खोलें')}<ArrowUpRight size={22}/></button><p>{t('No account needed to get started.','शुरुआत के लिए खाते की ज़रूरत नहीं।')}</p></div></section>
  </div>;
 }
