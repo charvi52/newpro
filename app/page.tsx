@@ -2,9 +2,9 @@
 
 import {useEffect,useRef,useState} from 'react';
 import {
-  AlertTriangle,ArrowRight,ArrowUpRight,Camera,Check,ChevronDown,ChevronRight,FileText,Heart,IndianRupee,Info,
+  AlertTriangle,ArrowRight,ArrowUpRight,Camera,Check,Cloud,ChevronDown,ChevronRight,FileText,Heart,IndianRupee,Info,
   LockKeyhole,MapPin,Menu,NotebookPen,Pencil,Pill,Plus,RotateCcw,ScanLine,Search,
-  SlidersHorizontal,Trash2,Upload,Users,Volume2,X
+  SlidersHorizontal,Trash2,Upload,UserRound,Users,Volume2,X
 } from 'lucide-react';
 import ConflictChecker from '@/components/conflict-checker';
 import SastiDawaFinder from '@/components/sasti-dawa-finder';
@@ -15,6 +15,8 @@ import {BarcodeFormat} from '@zxing/library';
 import Services from '@/components/cloud/services';
 import PremiumMotion from '@/components/motion/premium-motion';
 import EditorialHome from '@/components/editorial-home';
+import {PackHero} from '@/components/sky-experience';
+import ProductWalkthrough from '@/components/product-walkthrough';
 import {LanguageProvider} from '@/components/language';
 import {translate} from '@/lib/hi';
 import PackPhoto from '@/components/offline/pack-photo';
@@ -108,6 +110,7 @@ export default function Home(){
  const fileInput=useRef<HTMLInputElement>(null);
  const lastFocus=useRef<HTMLElement|null>(null);
  const dialog=useRef<HTMLElement>(null);
+ const faqRequested=useRef(false);
  const cancelled=useRef(false);
  const cameraEpoch=useRef(0);
  const imageEpoch=useRef(0);
@@ -116,6 +119,21 @@ export default function Home(){
  useEffect(()=>{loadOfflineSnapshot().then(setOfflineSnapshot).catch(()=>setNotice('Offline records could not load. Please reload from the local server.'));},[]);
 
  function go(v:View){close();setView(v);setMobileMenu(false);history.replaceState(null,'','#'+v);window.scrollTo({top:0,behavior:'smooth'});}
+ function showFaq(){
+  const faq=document.getElementById('medpro-faq');
+  if(faq){faq.focus();return;}
+  faqRequested.current=true;
+  setDadiMode(false);
+  go('home');
+ }
+
+ useEffect(()=>{
+  if(view==='home'&&!dadiMode&&faqRequested.current){
+   faqRequested.current=false;
+   document.getElementById('medpro-faq')?.focus();
+  }
+ },[view,dadiMode]);
+
  function stopCamera(){cameraEpoch.current++;cancelled.current=true;scannerControls.current?.stop();scannerControls.current=null;setCameraRunning(false);}
  function close(){imageEpoch.current++;stopCamera();setModal(null);setError('');setDeleteConfirm(false);setScanBusy(false);if(modal)lastFocus.current?.focus({preventScroll:true});lastFocus.current=null;}
  function open(value:Dialog){setNewMember(null);setRefillBatch(null);lastFocus.current=document.activeElement as HTMLElement;setError('');setDeleteConfirm(false);setModal(value);}
@@ -200,23 +218,153 @@ export default function Home(){
 
  function MedicineTile({m}:{m:Medicine}){const offline=offlineSnapshot?batchStatus(m,offlineSnapshot.records,simulation):null;const checked=offline?{state:offline.state==='simulated'?'matching-alert':offline.state,label:offline.state==='simulated'?'SIMULATED · Matching quality alert found':offline.state==='matching-alert'?'Matching quality alert found':offline.state==='confirmation-needed'?'Details need confirmation':'No matching alert found in the checked records',checkedAt:offlineSnapshot!.generatedAt}:checks[key(m)];const ownerLabel=(m.owner||'Me').trim()||'Me';const exp=evaluateExpiry(m.expiry);return <button className={"medicine-tile"+(dadiMode?' dadi-tile':'')} onClick={()=>details(m)}><div className="tile-top"><span className={'med-status-badge '+(checked?.state||'')}>{checked?.state==='matching-alert'||checked?.state==='confirmation-needed'?<AlertTriangle size={14}/>:<Info size={14}/>} {t(checked?.label||'Label details only')}</span><span style={{fontSize:'0.75rem',fontWeight:700,padding:'3px 8px',borderRadius:'6px',background:exp.bgColor,color:exp.color}}>{hi?exp.label.hi:exp.label.en}</span><ChevronRight size={19}/></div><div className="tile-body"><div className="tile-heading">{dadiMode&&m.photo?<img className="dadi-pack-photo" src={m.photo} alt={t("Saved pack photo","सहेजी गई पैक फ़ोटो")}/>:<span className="med-symbol"><Pill size={23}/></span>}<div><h3>{m.product}</h3><p className="tile-strength">{m.strength} · {m.form}</p></div></div><dl className="tile-details"><div><dt>{t("Manufacturer")}</dt><dd>{m.manufacturer||'Not provided'}</dd></div><div><dt>{t("Batch number")}</dt><dd>{m.batch||'Not added'}</dd></div><div><dt>{t("Expiry status")}</dt><dd style={{color:exp.color,fontWeight:600}}>{hi?exp.label.hi:exp.label.en} ({m.expiry||'N/A'})</dd></div><div><dt>{t("Owner")}</dt><dd>{t(ownerLabel)}</dd></div></dl></div><div className="tile-last-checked"><Info size={14}/>{t(offline?"Snapshot retrieved:":"Last checked:")}{' '}{checked?new Date(checked.checkedAt).toLocaleString(hi?'hi-IN':'en-IN'):t('not checked yet')}</div></button>;}
  return <LanguageProvider hindi={hi}><PremiumMotion paused={!!modal}/><div className={'site redesigned view-'+view+(dadiMode?' dadi-mode-active':'')}>
-  <header className="site-header" inert={!!modal}><button className="logo" aria-label={t("MedPro home")} onClick={()=>go('home')}><span className="logo-icon"><Heart size={20} strokeWidth={2.5}/><Plus size={10}/></span>{t("medpro")}<span className="logo-period">.</span></button>
-   <nav className={'desktop-nav '+(mobileMenu?'expanded':'')} aria-label={t("Main navigation")}>{(['home','cabinet','alerts','family'] as View[]).map((v,i)=><button key={v} aria-current={view===v?'page':undefined} className={view===v?'active':''} onClick={()=>go(v)}>{(hi?['होम','मेरी दवाएँ','भारत अलर्ट','परिवार']:['Overview','My cabinet','Quality alerts','Family'])[i]}</button>)}</nav>
-   <div className="header-right"><button className={"language"+(dadiMode?" active":"")} style={{background:dadiMode?"#fef08a":"transparent",color:dadiMode?"#854d0e":"inherit",fontWeight:700,borderRadius:"50px",border:dadiMode?"2px solid #ca8a04":"1px solid #c5dfed"}}onClick={()=>{const next=!dadiMode;setDadiMode(next);if(next)go('home');}} aria-pressed={dadiMode} title={t("Simple cabinet and pack read-aloud","सरल दवा कैबिनेट और पैक की आवाज़")}>{hi?"दादी मोड":"Dadi Mode"}</button><button className="btn outline header-cabinet" style={{border:"1.5px solid #059669",color:"#047857",fontWeight:600}} onClick={()=>{setSastiOpen(true);setSastiInitialQ('');}}><IndianRupee size={16}/>{t("Dawa Saathi","दवा साथी")}</button><button className="language" aria-label={t("Change language")} onClick={()=>setHi(!hi)}>{hi?'EN':'हिन्दी'}<ChevronDown size={12}/></button><button className="btn dark header-cabinet" onClick={()=>go('cabinet')}>{t('Open cabinet','मेरी दवाएँ')}<ArrowUpRight size={16}/></button><button className="menu-btn" aria-label={t("Toggle navigation")} aria-expanded={mobileMenu} onClick={()=>setMobileMenu(!mobileMenu)}>{mobileMenu?<X/>:<Menu/>}</button></div>
+  <header className="site-header" inert={!!modal}>
+   <button className="logo" aria-label={t("MedPro home")} onClick={()=>go('home')}>
+    <span className="logo-icon"><Heart size={20} strokeWidth={2.5}/><Plus size={10}/></span>
+    <span className="header-wordmark">medpro<span>.</span></span>
+   </button>
+   <nav className={'desktop-nav '+(mobileMenu?'expanded':'')} aria-label={t("Main navigation")}>
+    {(['cabinet','alerts','family'] as View[]).map((v,i)=>
+     <button key={v} aria-current={view===v?'page':undefined} className={view===v?'active':''} onClick={()=>go(v)}>
+      {(hi?['मेरी दवाएँ','भारत अलर्ट','परिवार']:['My cabinet','Quality alerts','Family'])[i]}
+     </button>
+    )}
+    <button className="mobile-guide" onClick={()=>{setMobileMenu(false);setSastiOpen(true);setSastiInitialQ('');}}>{t("Dawa Saathi","दवा साथी")}</button>
+   </nav>
+   <div className="header-right">
+    <div className="header-utilities">
+     <button className="language header-dadi" onClick={()=>{const next=!dadiMode;setDadiMode(next);if(next)go('home');}} aria-pressed={dadiMode} title={t("Simple cabinet and pack read-aloud","सरल दवा कैबिनेट और पैक की आवाज़")}>{hi?"दादी मोड":"Dadi Mode"}</button>
+     <button className="header-guide" onClick={()=>{setSastiOpen(true);setSastiInitialQ('');}}><IndianRupee size={16}/>{t("Dawa Saathi","दवा साथी")}</button>
+     <button className="language" aria-label={t("Change language")} onClick={()=>setHi(!hi)}>{hi?'EN':'हिन्दी'}</button>
+    </div>
+    <button className="btn dark header-cabinet" onClick={()=>go('cabinet')}>{t('Open cabinet','मेरी दवाएँ')}<ArrowUpRight size={16}/></button>
+    <button className="menu-btn" aria-label={t("Toggle navigation")} aria-expanded={mobileMenu} onClick={()=>setMobileMenu(!mobileMenu)}>{mobileMenu?<X/>:<Menu/>}</button>
+   </div>
   </header>
   <main inert={!!modal}>
+   {view==='home'&&!dadiMode&&<div className="homepage-opening">
+    <PackHero onCabinet={()=>go('cabinet')} onScan={openScanner} onAlerts={()=>go('alerts')}
+     onDadi={()=>{setDadiMode(true);go('home');}} onSample={()=>quickSample('paracetamol')}
+     onSearch={query=>{setSastiOpen(true);setSastiInitialQ(query);}}/>
+   </div>}
    <details className="demo-studio" open={demoItems!==null}><summary><span className="demo-studio-dot"/>{t('Demo studio','डेमो स्टूडियो')}<span>{t(demoItems!==null?'Sample cabinet active · open controls':'Try MedPro with a sample cabinet',demoItems!==null?'नमूना कैबिनेट सक्रिय · नियंत्रण खोलें':'नमूना कैबिनेट के साथ MedPro देखें')}</span><ChevronDown size={16}/></summary>   <OfflineCache recordsReady={!!offlineSnapshot}/>
    <DemoToolbar active={demoItems!==null} simulated={simulation} unread={unread} ready={!!offlineSnapshot} onLoad={loadDemo} onSimulate={()=>{setSimulation(true);setUnread(true);}} onReset={loadDemo} onExit={()=>{setDemoItems(null);setSimulation(false);setUnread(false);setOwnerFilter(null);}} onRead={()=>setUnread(false)}/>
 </details>
    {view==='home'&&dadiMode&&<section className="section-wrap dadi-start"><h1>{t('My medicines','मेरी दवाएँ')}</h1><p>{t('Check a strip or open a saved pack to hear its details.','स्ट्रिप जाँचें या जानकारी सुनने के लिए सहेजा हुआ पैक खोलें।')}</p><button className="btn dark" onClick={openScanner}>{t('Check a strip','स्ट्रिप जाँचें')}</button><button className="btn outline" onClick={()=>{setOwnerFilter(null);go('cabinet');}}>{t('My cabinet','मेरी दवाओं का कैबिनेट')}</button></section>}
-   {view==='home'&&!dadiMode&&<EditorialHome onCabinet={()=>go('cabinet')} onScan={openScanner} onAlerts={()=>go('alerts')} onSample={()=>quickSample('paracetamol')} onSearch={(q:string)=>{setSastiOpen(true);setSastiInitialQ(q);}}/>}
-   {view==='cabinet'&&<section className="app-page section-wrap family-cabinet-screen"><div className="page-title"><div><span className="eyebrow">{t("YOUR FAMILY CABINET")}</span><h1>{t("Your family cabinet.","आपके परिवार की दवाएँ।")}</h1><p>{t("A place for every pack. A little clarity for everyone.","हर पैक के लिए जगह। हर अपने के लिए थोड़ी स्पष्टता।")}</p></div><div className="cabinet-page-actions"><button className="btn dark" onClick={openScanner}><ScanLine size={18}/>{t("Scan new medicine")}</button><button className="btn outline" onClick={()=>manual()}><Plus size={18}/>{' '}{t("Add manually")}</button><button className="btn outline" style={{border:"1.5px solid #059669",color:"#047857",fontWeight:600}} onClick={()=>{setSastiOpen(true);setSastiInitialQ('');}}><IndianRupee size={17}/>{t("Dawa Saathi · Medicine Guide","दवा साथी · दवा गाइड")}</button></div></div><div className="cabinet-profile-row" aria-label={t("Family members")}>{cabinetProfiles.map(profile=><button key={profile} type="button" aria-pressed={ownerFilter===profile} onClick={()=>setOwnerFilter(ownerFilter===profile?null:profile)} className={'profile-chip'+(ownerFilter===profile?' active':'')}><Users size={16}/><span>{t(profile)}</span><b>{activeItems.filter(m=>((m.owner||'Me').trim()||'Me')===profile).length}</b></button>)}</div><div className="cabinet-topline"><span className="saved-label"><span/>{activeItems.length}{' '}{t("saved medicines")}</span><button className="text-link" onClick={()=>open('reset')}><RotateCcw size={16}/>{' '}{t("Clear local cabinet")}</button></div><div className="cabinet-tools"><div className="search-box"><Search size={18}/><input aria-label={t("Search medicines")} placeholder={t("Find a medicine, batch or family label…")} value={query} onChange={e=>setQuery(e.target.value)}/>{query&&<button onClick={()=>setQuery('')} aria-label={t("Clear search")}><X size={16}/></button>}</div><div className="filter-select"><SlidersHorizontal size={16}/><select aria-label={t("Filter medicines")} value={filter} onChange={e=>setFilter(e.target.value)}><option value="all">{t("All medicines")}</option><option value="personal">{t("My entries")}</option></select></div></div><ConflictChecker medicines={activeItems} hindi={hi}/><div className="cabinet-grid">{filtered.map(m=><MedicineTile key={key(m)} m={m}/>)}{filtered.length>0&&<button className="add-tile" onClick={openScanner}><span><ScanLine size={26}/></span><h3>{t("Scan a new medicine")}</h3><p>{t("Use the camera, upload a code image, or review the pack details.")}</p><b>{t("Start scan")}{' '}<ArrowUpRight size={17}/></b></button>}</div>{!filtered.length&&<div className="empty-state"><ScanLine size={34}/><h3>{t("No saved matches yet.")}</h3><p>{t("Scan a package, search a medicine name, or enter the details manually.")}</p><button className="btn dark" onClick={openScanner}>{t("Scan new medicine")}</button></div>}<div className="context-banner"><LockKeyhole size={21}/><div><b>{t("Saved on this device.")}</b><p>{t("Cloud saving is optional and requires a signed-in Supabase account. A saved entry is not a safety or authenticity check.")}</p></div></div></section>}
+   {view==='home'&&!dadiMode&&<ProductWalkthrough
+    onScan={openScanner} onCabinet={()=>go('cabinet')} onAlerts={()=>go('alerts')}
+    onDadiMode={()=>{setDadiMode(true);go('home');}}
+   />}
+   {view==='home'&&!dadiMode&&<EditorialHome onCabinet={()=>go('cabinet')} onAlerts={()=>go('alerts')} onSample={()=>quickSample('paracetamol')}/>}
+   {view==='cabinet'&&(
+    <section className="app-page section-wrap family-cabinet-screen">
+     <div className="page-title">
+      <div>
+       <h1>{hi?'आपके परिवार की':'Your family'}{' '}<span>{hi?'दवाएँ।':'cabinet.'}</span></h1>
+       <p>{t("A place for every pack. A little clarity for everyone.","हर पैक के लिए जगह। हर अपने के लिए थोड़ी स्पष्टता।")}</p>
+      </div>
+      <div className="cabinet-page-actions">
+       <button className="btn dark" onClick={openScanner}><ScanLine size={20}/>{t("Scan new medicine")}</button>
+       <button className="btn outline" onClick={()=>manual()}><Plus size={20}/>{t("Add manually")}</button>
+       <button className="btn outline cabinet-guide" onClick={()=>{setSastiOpen(true);setSastiInitialQ('');}}>
+        <IndianRupee size={18}/>{t("Dawa Saathi · Medicine Guide","दवा साथी · दवा गाइड")}
+       </button>
+       <button className="btn outline cabinet-family" aria-label={t("Family sharing","परिवार के साथ साझा करें")} onClick={()=>go('family')}><UserRound size={20}/></button>
+      </div>
+     </div>
+     <div className="cabinet-profile-row" role="group" aria-label={t("Family members")}>
+      {cabinetProfiles.map(profile=>(
+       <button key={profile} type="button" aria-pressed={ownerFilter===profile} onClick={()=>setOwnerFilter(ownerFilter===profile?null:profile)} className={'profile-chip'+(ownerFilter===profile?' active':'')}>
+        <UserRound size={19}/><span>{t(profile)}</span>
+        <b>{activeItems.filter(m=>((m.owner||'Me').trim()||'Me')===profile).length}</b>
+       </button>
+      ))}
+     </div>
+     <div className="cabinet-topline">
+      <span className="saved-label"><span/>{activeItems.length}{' '}{t("saved medicines")}</span>
+      <button className="text-link" onClick={()=>open('reset')}><RotateCcw size={18}/>{t("Clear local cabinet")}</button>
+     </div>
+     <div className="cabinet-tools">
+      <div className="search-box">
+       <Search size={20}/><input aria-label={t("Search medicines")} placeholder={t("Find a medicine, batch or family label…")} value={query} onChange={e=>setQuery(e.target.value)}/>
+       {query&&<button onClick={()=>setQuery('')} aria-label={t("Clear search")}><X size={16}/></button>}
+      </div>
+      <div className="filter-select">
+       <SlidersHorizontal size={19}/>
+       <select aria-label={t("Filter medicines")} value={filter} onChange={e=>setFilter(e.target.value)}>
+        <option value="all">{t("All medicines")}</option><option value="personal">{t("My entries")}</option>
+       </select>
+      </div>
+     </div>
+     <ConflictChecker medicines={activeItems} hindi={hi}/>
+     {filtered.length>0?(
+      <div className="cabinet-grid">
+       {filtered.map(m=><MedicineTile key={key(m)} m={m}/>)}
+       <button className="add-tile" onClick={openScanner}>
+        <span><ScanLine size={26}/></span>
+        <h3>{t("Scan a new medicine")}</h3>
+        <p>{t("Use the camera, upload a code image, or review the pack details.")}</p>
+        <b>{t("Start scan")}{' '}<ArrowUpRight size={17}/></b>
+       </button>
+      </div>
+     ):(
+      <div className="empty-state">
+       <img className="cabinet-empty-art" src="/images/editorial/cabinet-empty.webp" width={264} height={144} alt=""/>
+       <h3>{t("No saved matches yet.")}</h3>
+       <p>{t("Scan a package, search a medicine name, or enter the details manually.")}</p>
+       <button className="btn dark" onClick={openScanner}><ScanLine size={20}/>{t("Scan new medicine")}<ChevronRight size={18}/></button>
+      </div>
+     )}
+     <div className="context-banner">
+      <span className="cabinet-cloud-icon"><Cloud size={24} aria-hidden="true"/></span>
+      <div>
+       <b>{t("Saved on this device.")}</b>
+       <p>{t("Cloud saving is optional and requires a signed-in Supabase account. A saved entry is not a safety or authenticity check.")}</p>
+      </div>
+      <Info className="cabinet-context-info" size={20} aria-hidden="true"/>
+     </div>
+    </section>
+   )}
    {loaded&&demoItems===null&&view==='cabinet'&&<details className="optional-services section-wrap"><summary>{t('Optional cloud backup & family sharing','वैकल्पिक क्लाउड बैकअप और परिवार शेयरिंग')}</summary><Services mode="cabinet" items={items} onRestore={setItems}/></details>}
    {loaded&&demoItems===null&&view==='alerts'&&<Services mode="alerts" items={items} onRestore={setItems}/>}
    {loaded&&demoItems===null&&view==='family'&&<Services mode="family" items={items} onRestore={setItems}/>}
    {demoItems!==null&&['alerts','family'].includes(view)&&<section className="section-wrap demo-preview"><h2>Offline demonstration</h2><p>Open a sample medicine in My cabinet for the three safety cards. The Demo Mode toolbar provides local notifications and Rohan’s fictional caregiver preview. Cloud services are not called in this demo.</p><button className="btn dark" onClick={()=>go('cabinet')}>Open demo cabinet</button></section>}
   </main>
-  <footer className="site-footer" inert={!!modal}><div className="footer-main section-wrap"><button className="logo" onClick={()=>go('home')}><span className="logo-icon"><Heart size={20}/><Plus size={10}/></span>{t("medpro")}<span className="logo-period">.</span></button><p>{t("Little details. People you love.")}</p><div><button onClick={()=>open('about')}>{t("About MedPro")}</button></div></div><div className="footer-bottom section-wrap"><span>{t("© 2026 MedPro · Built with care.")}</span><button onClick={()=>go('alerts')}><span className="coverage-dot"/>{t("CDSCO India: checked report coverage shown")}</button><span>{t("Not medical advice.")}</span></div><p className="section-wrap" style={{textAlign:"center",paddingBlock:"0.75rem"}}>Made by Charvi Naresh and Sparsh Rana</p></footer>
+  <footer id="medpro-footer" className="site-footer landscape-footer" inert={!!modal}>
+   <div className="landscape-footer-inner">
+    <div className="landscape-footer-grid">
+     <div className="landscape-footer-brand">
+      <button className="logo" onClick={()=>go('home')} aria-label={t('MedPro home','MedPro होम')}>
+       <span className="logo-icon"><Heart size={20} strokeWidth={2.5}/><Plus size={10}/></span>
+       <span className="header-wordmark">medpro<span>.</span></span>
+      </button>
+      <p>{t('Check medicine pack details against published CDSCO alerts and keep your family’s medicine records together.','दवा पैक की जानकारी प्रकाशित CDSCO अलर्ट से मिलाएँ और परिवार की दवाओं का रिकॉर्ड एक जगह रखें।')}</p>
+     </div>
+     <nav aria-labelledby="footer-product">
+      <h2 id="footer-product">{t('Product','फ़ीचर')}</h2>
+      <button onClick={openScanner}>{t('Scan a pack','दवा पैक स्कैन करें')}</button>
+      <button onClick={()=>go('cabinet')}>{t('My cabinet','मेरी दवाएँ')}</button>
+      <button onClick={()=>go('alerts')}>{t('Quality alerts','गुणवत्ता अलर्ट')}</button>
+      <button onClick={()=>go('family')}>{t('Family','परिवार')}</button>
+     </nav>
+     <nav aria-labelledby="footer-help">
+      <h2 id="footer-help">{t('Resources','संसाधन')}</h2>
+      <button onClick={showFaq}>{t('Frequently asked questions','अक्सर पूछे जाने वाले सवाल')}</button>
+      <button onClick={()=>quickSample('paracetamol')}>{t('Try the demo','नमूना देखें')}</button>
+      <button onClick={()=>{setSastiOpen(true);setSastiInitialQ('');}}>{t('Dawa Saathi','दवा साथी')}</button>
+     </nav>
+     <nav aria-labelledby="footer-about">
+      <h2 id="footer-about">{t('MedPro','MedPro')}</h2>
+      <button onClick={()=>open('about')}>{t('About MedPro','MedPro के बारे में')}</button>
+     </nav>
+    </div>
+    <div className="landscape-footer-meta">
+     <span>© 2026 MedPro</span>
+     <span>Made by Charvi Naresh and Sparsh Rana</span>
+     <span>{t('Not medical advice.')}</span>
+    </div>
+   </div>
+  </footer>
   {notice&&<div className="toast" role="status"><span><Check size={16}/></span>{notice}<button aria-label={t("Dismiss notification")} onClick={()=>setNotice('')}><X size={16}/></button></div>}
   {modal&&<div className="modal-backdrop" onClick={e=>{if(e.target===e.currentTarget)close();}}><section ref={dialog} className={'modal '+(modal==='scan'?'scanner-modal scan-confirm-dialog':modal==='manual'?'review-modal scan-confirm-dialog':modal==='catalog'?'catalog-modal scan-confirm-dialog':'')} role="dialog" aria-modal="true" aria-labelledby="modal-title" onKeyDown={e=>{if(e.key==='Escape')close();if(e.key==='Tab'){const targets=Array.from(dialog.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],summary,[tabindex="0"]')||[]).filter(el=>el.getClientRects().length);const first=targets[0],last=targets.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last?.focus();}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}}}}><button className="close-modal" aria-label={t("Close dialog")} onClick={close}><X size={22}/></button>
    {modal==='scan'&&<><span className="eyebrow">{t("SCAN AND CONFIRM")}</span><h2 id="modal-title">{t("Add a medicine from its pack")}</h2><p className="modal-description">{t("Choose how to read your medicine details. You can review and correct information before saving it.")}</p><div className="scan-choice-grid" role="group" aria-label={t("Choose how to enter medicine details")}>

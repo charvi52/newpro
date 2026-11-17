@@ -1,0 +1,93 @@
+.redesigned .landscape-footer {
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  color: #f8f7f2;
+  background: #1b251e;
+  background-image:
+    linear-gradient(180deg, #18211cf5 0%, #18211cde 35%, #18211c75 65%, #18211c12 83%, #111a15e8 100%),
+    url('/images/editorial/footer-valley.webp');
+  background-position: center, center 65%;
+  background-size: cover;
+}
+
+.landscape-footer-inner {
+  width: min(calc(100% - 96px), 1240px);
+  min-height: 510px;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: clamp(104px, 17vw, 240px);
+  padding-block: 52px 23px;
+}
+
+.landscape-footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.85fr) repeat(3, minmax(0, 1fr));
+  gap: clamp(20px, 3.5vw, 52px);
+}
+
+.redesigned .landscape-footer .logo { color: #fffdf9; gap: 9px; font-size: 31px; }
+.redesigned .landscape-footer .logo-icon { background-color: #5946d0; }
+.redesigned .landscape-footer .logo-icon > svg:last-child { background: #18211c; color: #fffdf9; }
+.redesigned .landscape-footer .header-wordmark { color: #fffdf9; }
+.redesigned .landscape-footer .header-wordmark > span { color: #a197fa; }
+.redesigned .landscape-footer .landscape-footer-brand p {
+  color: #e5e7dd;
+  max-width: 35ch;
+  line-height: 1.65;
+  margin-top: 17px;
+  font-size: 15px;
+}
+
+.landscape-footer nav { display: grid; align-content: start; justify-items: start; }
+.landscape-footer nav h2 {
+  color: #fffdf9;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin: 4px 0 10px;
+}
+
+.redesigned .landscape-footer nav button {
+  min-height: 40px;
+  padding-block: 6px;
+  text-align: start;
+  color: #e5e7dd;
+  font-size: 15px;
+}
+
+.redesigned .landscape-footer nav button:hover { color: #fff; text-decoration: underline; text-underline-offset: 4px; }
+.redesigned .landscape-footer button:focus-visible { outline: 2px solid #e5ddff; box-shadow: none; }
+
+.landscape-footer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  column-gap: 24px;
+  row-gap: 8px;
+  padding-top: 16px;
+  border-top: 1px solid #ffffff55;
+  font-size: 13px;
+}
+
+.site .landscape-footer .landscape-footer-meta span { color: #f8f7f2; }
+#medpro-faq { scroll-margin-top: 16px; }
+
+@media (max-width: 760px) {
+  .landscape-footer-inner {
+    width: calc(100% - 40px);
+    padding-top: 36px;
+    gap: 150px;
+  }
+
+  .landscape-footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .landscape-footer-brand { grid-column: 1 / -1; }
+  .redesigned .landscape-footer {
+    background-image:
+      linear-gradient(180deg, #18211cfa 0%, #18211cf0 42%, #18211cc2 65%, #18211c40 83%, #111a15ed 100%),
+      url('/images/editorial/footer-valley.webp');
+  }
+}

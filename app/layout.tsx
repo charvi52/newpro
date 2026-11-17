@@ -2,6 +2,10 @@ import type {Metadata} from 'next';
 import './globals.css';
 import './redesign.css';
 import './sky.css';
+import './walkthrough.css';
+import './pack-theme.css';
+import './landscape-footer.css';
+import './cabinet-theme.css';
 import {ThemeProvider} from '@/components/theme';
 import {themeBootScript} from '@/lib/theme';
 export const metadata:Metadata={
