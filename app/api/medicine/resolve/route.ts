@@ -17,6 +17,10 @@ type CachedResponse = { body: Record<string, unknown>; status: number; at: strin
 const resolveCache = new Map<string, CachedResponse>();
 const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h for successful resolutions
 const NEGATIVE_TTL_MS = 60 * 60 * 1000; // 1h for unknown-medicine 404s
+// Provider outages are pinned only briefly: long enough that a panic-refresh
+// loop cannot burn the remaining free-tier quota on the same dead query,
+// short enough that recovery is seen within minutes.
+const FAILURE_TTL_MS = 90 * 1000;
 const CACHE_MAX = 500;
 
 function cacheGet(key: string, ttl: number): CachedResponse | null {
@@ -64,7 +68,9 @@ interface CdscoCheck {
 async function resolveWithAlerts(q: string, batch: string): Promise<{ body: Record<string, unknown>; status: number }> {
   try {
     const key = cacheKey(q, batch);
-    const cached = cacheGet(key, resolveCache.get(key)?.body.error ? NEGATIVE_TTL_MS : CACHE_TTL_MS);
+    const hit = resolveCache.get(key);
+    const ttl = hit ? (hit.body.outage ? FAILURE_TTL_MS : hit.body.error ? NEGATIVE_TTL_MS : CACHE_TTL_MS) : CACHE_TTL_MS;
+    const cached = cacheGet(key, ttl);
     if (cached) {
       return {
         body: { ...cached.body, cachedSince: cached.at },
@@ -79,15 +85,17 @@ async function resolveWithAlerts(q: string, batch: string): Promise<{ body: Reco
     if (!resolved) {
       if (providerState.providerFailed) {
         // A provider outage is not evidence about the medicine. Report it
-        // honestly and never cache it, so recovery is immediate.
-        return {
-          body: {
-            success: false,
-            error: 'Live medicine search is temporarily unavailable on the server. Popular brands such as Augmentin 625, Pan-D or Dolo 650 remain available from the bundled database — or add the pack to your cabinet manually.',
-            errorHi: 'लाइव दवा खोज इस समय सर्वर पर उपलब्ध नहीं है। Augmentin 625, Pan-D या Dolo 650 जैसी लोकप्रिय दवाएँ बंडल सूची से मिल सकती हैं, या पैक को कैबिनेट में मैन्युअली जोड़ें।',
-          },
-          status: 503,
+        // honestly and pin it only for a short window, so a refresh loop
+        // cannot burn the remaining free-tier quota on the same query.
+        const body = {
+          success: false,
+          outage: true,
+          retryAfterSeconds: Math.round(FAILURE_TTL_MS / 1000),
+          error: 'Live medicine search is temporarily unavailable on the server. Popular brands such as Augmentin 625, Pan-D or Dolo 650 remain available from the bundled database — or add the pack to your cabinet manually.',
+          errorHi: 'लाइव दवा खोज इस समय सर्वर पर उपलब्ध नहीं है। Augmentin 625, Pan-D या Dolo 650 जैसी लोकप्रिय दवाएँ बंडल सूची से मिल सकती हैं, या पैक को कैबिनेट में मैन्युअली जोड़ें।',
         };
+        cacheSet(key, { body, status: 503, at: new Date().toISOString() });
+        return { body, status: 503 };
       }
       const notFound = hasLiveSearch()
         ? {
