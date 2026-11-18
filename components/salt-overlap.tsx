@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Layers } from 'lucide-react';
-import { checkSaltOverlap } from '@/lib/salt-overlap';
+import { checkSaltFamilies, checkSaltOverlap } from '@/lib/salt-overlap';
 import type { Medicine } from '@/lib/carely';
 
 interface SaltOverlapProps {
@@ -13,8 +13,9 @@ interface SaltOverlapProps {
 export default function SaltOverlap({ medicines, hindi }: SaltOverlapProps) {
   const [open, setOpen] = useState(true);
   const groups = checkSaltOverlap(medicines);
+  const families = checkSaltFamilies(medicines);
 
-  if (medicines.length < 2 || groups.length === 0) {
+  if (medicines.length < 2 || (groups.length === 0 && families.length === 0)) {
     return null;
   }
 
@@ -48,8 +49,8 @@ export default function SaltOverlap({ medicines, hindi }: SaltOverlapProps) {
             </b>
             <p style={{ margin: '0.15rem 0 0', fontSize: '0.92rem', color: '#a16207' }}>
               {hindi
-                ? `${groups.length} जोड़ी मिली — दोनों को साथ लेने से मात्रा बढ़ सकती है।`
-                : `${groups.length} ${groups.length === 1 ? 'overlap' : 'overlaps'} found — taking both together can double the dose.`}
+                ? `${groups.length + families.length} चेतावनी मिली — दोनों को साथ लेने से मात्रा बढ़ सकती है।`
+                : `${groups.length + families.length} ${groups.length + families.length === 1 ? 'warning' : 'warnings'} found — taking them together can double the effect.`}
             </p>
           </div>
         </div>
@@ -93,6 +94,34 @@ export default function SaltOverlap({ medicines, hindi }: SaltOverlapProps) {
               </div>
             );
           })}
+          {families.map((family) => (
+            <div
+              key={family.family}
+              style={{
+                background: '#ffffff',
+                borderRadius: '10px',
+                border: '1px dashed #fbbf24',
+                padding: '0.8rem 1rem',
+              }}
+            >
+              <b style={{ color: '#92400e' }}>
+                {hindi ? `एक ही श्रेणी, अलग साल्ट: ${family.family}` : `Same family, different salts: ${family.family}`}
+              </b>
+              <ul style={{ margin: '0.4rem 0', paddingLeft: '1.2rem', color: '#78350f' }}>
+                {family.packs.map((pack, index) => (
+                  <li key={`${pack.product}-${index}`} style={{ fontSize: '0.93rem' }}>
+                    {pack.product}
+                    {pack.strength ? ` · ${pack.strength}` : ''} — {pack.owner} ({hindi ? 'साल्ट' : 'salt'}: {pack.salt})
+                  </li>
+                ))}
+              </ul>
+              <p style={{ margin: 0, fontSize: '0.92rem', color: '#92400e' }}>
+                {hindi
+                  ? 'ये दवाइयाँ एक ही परिवार (श्रेणी) की हैं, साल्ट अलग हैं। इन्हें साथ लेना ठीक नहीं भी हो सकता — डॉक्टर या दवा दुकानदार से ज़रूर पूछें।'
+                  : 'These medicines belong to the same treatment family but have different salts. They are often not meant to be taken together — confirm with your doctor or chemist.'}
+              </p>
+            </div>
+          ))}
         </div>
       )}
     </div>
