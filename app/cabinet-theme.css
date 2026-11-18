@@ -167,3 +167,103 @@
   .redesigned .family-cabinet-screen .profile-chip { padding-inline: 12px; }
   .redesigned .family-cabinet-screen .cabinet-topline .text-link { font-size: 13px; }
 }
+
+/* ---- Dadi voice strip: listen-first read-aloud for elders ---- */
+.dadi-voice-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 1.6rem;
+  padding: 1.15rem 1.4rem;
+  border-radius: 22px;
+  background: linear-gradient(135deg, #f0faf2, #e3f4e9);
+  border: 2px solid #bfe3cb;
+  box-shadow: 0 10px 30px rgba(9, 96, 73, 0.08);
+}
+.dadi-voice-summary b {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #096049;
+}
+.dadi-voice-summary p {
+  margin-top: 0.35rem;
+  font-size: 1.05rem;
+  color: #2f6b52;
+  max-width: 36rem;
+}
+.dadi-voice-counts {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.65rem;
+}
+.dadi-voice-counts span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.32rem 0.75rem;
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+.dadi-voice-counts .c-alert { background: #fee2e2; color: #b91c1c; }
+.dadi-voice-counts .c-expired { background: #ffedd5; color: #c2410c; }
+.dadi-voice-counts .c-expiring { background: #fef9c3; color: #a16207; }
+.dadi-voice-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.dadi-voice-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.85rem 1.2rem;
+  border-radius: 16px;
+  border: 2px solid #096049;
+  background: #ffffff;
+  color: #096049;
+  font-weight: 800;
+  font-size: 1.02rem;
+  cursor: pointer;
+  min-height: 54px;
+}
+.dadi-voice-actions button:hover { background: #eef8f1; }
+.dadi-voice-actions button.active { background: #096049; color: #ffffff; }
+.dadi-voice-actions button:disabled { opacity: 0.45; cursor: default; }
+
+/* Per-tile listen chip (Dadi Mode only) */
+.dadi-speak-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 14px;
+  border: 2px solid #096049;
+  background: #ffffff;
+  color: #096049;
+  font-weight: 800;
+  font-size: 0.95rem;
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.dadi-speak-chip:focus-visible {
+  outline: 3px solid #86efac;
+  outline-offset: 2px;
+}
+.dadi-speak-chip.speaking {
+  background: #096049;
+  color: #ffffff;
+  animation: dadi-pulse 1.15s ease-in-out infinite;
+}
+@keyframes dadi-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.07); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dadi-speak-chip.speaking { animation: none; }
+}
+.dadi-mode-active .tile-top { flex-wrap: wrap; row-gap: 0.5rem; }

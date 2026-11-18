@@ -4,7 +4,7 @@ import {useEffect,useRef,useState} from 'react';
 import {
   AlertTriangle,ArrowRight,ArrowUpRight,Camera,Check,Cloud,ChevronDown,ChevronRight,FileText,Heart,IndianRupee,Info,
   LockKeyhole,MapPin,Menu,NotebookPen,Pencil,Pill,Plus,RotateCcw,ScanLine,Search,
-  SlidersHorizontal,Trash2,Upload,UserRound,Users,Volume2,X
+  SlidersHorizontal,Square,Trash2,Upload,UserRound,Users,Volume1,Volume2,X
 } from 'lucide-react';
 import ConflictChecker from '@/components/conflict-checker';
 import SastiDawaFinder from '@/components/sasti-dawa-finder';
@@ -94,15 +94,69 @@ export default function Home(){
  const [sastiOpen,setSastiOpen]=useState(false);
  const [sastiInitialQ,setSastiInitialQ]=useState('');
  const [chemistSlip,setChemistSlip]=useState<ChemistSlipData|null>(null);
- const [speakingMed,setSpeakingMed]=useState<string|null>(null);
- function speakMedicine(m:Medicine){
-  if(!('speechSynthesis' in window)){setNotice('Audio is unavailable in this browser. Read the saved details on screen.');return;}
-  window.speechSynthesis.cancel();setSpeakingMed(m.product);
-  const text=hi
-   ? `दवा: ${m.product}। स्ट्रेंथ: ${m.strength||'दर्ज नहीं'}। बैच: ${m.batch||'दर्ज नहीं'}। समाप्ति का महीना: ${m.expiry||'दर्ज नहीं'}।`
-   : `Saved medicine: ${m.product}. Strength: ${m.strength||'not entered'}. Batch: ${m.batch||'not entered'}. Expiry month: ${m.expiry||'not entered'}.`;
-  const u=new SpeechSynthesisUtterance(text);u.lang=hi?'hi-IN':'en-IN';u.rate=0.88;
-  u.onend=()=>setSpeakingMed(null);u.onerror=()=>setSpeakingMed(null);window.speechSynthesis.speak(u);
+ const [speakingId,setSpeakingId]=useState<string|null>(null);
+ const [dadiSlow,setDadiSlow]=useState(false);
+ const dadiSummarySpoken=useRef(false);
+ function stopSpeech(){window.speechSynthesis?.cancel();setSpeakingId(null);}
+ function speakText(text:string,id:string){
+  if(!('speechSynthesis' in window)){setNotice(t('Audio is unavailable in this browser. Read the details on screen.','इस ब्राउज़र में ऑडियो उपलब्ध नहीं है। जानकारी स्क्रीन पर पढ़ें।'));return;}
+  window.speechSynthesis.cancel();setSpeakingId(id);
+  const u=new SpeechSynthesisUtterance(text);u.lang=hi?'hi-IN':'en-IN';u.rate=dadiSlow?0.6:0.9;
+  u.onend=()=>setSpeakingId(null);u.onerror=()=>setSpeakingId(null);window.speechSynthesis.speak(u);
+ }
+ function speakMedicine(m:Medicine,state:string|null,expStatus:string){
+  const owner=(m.owner||'Me').trim()||'Me';
+  const verdict=state==='simulated'?'matching-alert':state;
+  let text='';
+  if(hi){
+   text=`${m.product}${m.strength?`, ${m.strength}`:''}, ${owner} के लिए।`;
+   if(m.batch)text+=` बैच नंबर ${m.batch}।`;
+   if(verdict==='matching-alert')text+=' इस पैक पर गुणवत्ता अलर्ट मिला है। यह दवा रोक दीजिए और दवा दुकानदार को दिखाइए।';
+   else if(verdict==='confirmation-needed')text+=' जाँच में पक्का करना बाकी है। दवा दुकानदार से मिलाइए।';
+   else if(verdict==='no-match')text+=' सरकारी रिकॉर्ड में इस पैक पर कोई अलर्ट नहीं मिला।';
+   if(expStatus==='expired')text+=' इसकी एक्सपायरी निकल चुकी है। यह दवा बिल्कुल न लें।';
+   else if(expStatus==='expiring_soon')text+=' एक्सपायरी जल्द खत्म होगी। दवा दुकानदार से नई पैक पूछ लीजिए।';
+   else if(expStatus==='unknown')text+=' एक्सपायरी अभी दर्ज नहीं है। पैक देखकर जोड़ दीजिए।';
+  } else {
+   text=`${m.product}${m.strength?`, ${m.strength}`:''}, kept for ${owner}.`;
+   if(m.batch)text+=` Batch number ${m.batch}.`;
+   if(verdict==='matching-alert')text+=' A quality alert matches this pack. Do not use it. Show it to your chemist.';
+   else if(verdict==='confirmation-needed')text+=' This pack still needs confirmation. Please verify with your chemist.';
+   else if(verdict==='no-match')text+=' No alert was found for this pack in the official records.';
+   if(expStatus==='expired')text+=' Its expiry has passed. Do not take this medicine.';
+   else if(expStatus==='expiring_soon')text+=' Its expiry is approaching soon. Ask your chemist for a fresh pack.';
+   else if(expStatus==='unknown')text+=' No expiry has been recorded for this pack.';
+  }
+  speakText(text,key(m));
+ }
+ function cabinetSummary(){
+  let expired=0,expiring=0,alerts=0,confirm=0;
+  for(const m of activeItems){
+   const exp=evaluateExpiry(m.expiry);
+   if(exp.status==='expired')expired++;else if(exp.status==='expiring_soon')expiring++;
+   if(offlineSnapshot){const raw=batchStatus(m,offlineSnapshot.records,simulation).state;const st=raw==='simulated'?'matching-alert':raw;if(st==='matching-alert')alerts++;else if(st==='confirmation-needed')confirm++;}
+  }
+  return {total:activeItems.length,expired,expiring,alerts,confirm};
+ }
+ function speakCabinetSummary(){
+  const s=cabinetSummary();
+  let text='';
+  if(hi){
+   text=s.total?`आपके कैबिनेट में ${s.total} दवाइयाँ हैं। `:'आपके कैबिनेट में अभी कोई दवा सहेजी नहीं गई है।';
+   if(s.alerts)text+=`${s.alerts} पैक पर गुणवत्ता अलर्ट है। `;
+   if(s.expired)text+=`${s.expired} की एक्सपायरी निकल चुकी है। `;
+   if(s.expiring)text+=`${s.expiring} जल्द खत्म होने वाली हैं। `;
+   if(s.alerts||s.expired)text+='जिस पैक पर लाल या नारंगी चिह्न है उसे दवा दुकानदार को दिखाइए। ';
+   text+='हर पैक सुनने के लिए उसके ऊपर आवाज़ वाला बटन दबाइए।';
+  } else {
+   text=s.total?`You have ${s.total} medicines in your cabinet. `:'No medicines are saved in your cabinet yet.';
+   if(s.alerts)text+=`${s.alerts} ${s.alerts===1?'pack has':'packs have'} a quality alert. `;
+   if(s.expired)text+=`${s.expired} ${s.expired===1?'is':'are'} expired. `;
+   if(s.expiring)text+=`${s.expiring} ${s.expiring===1?'is':'are'} expiring soon. `;
+   if(s.alerts||s.expired)text+='Show any pack marked red or orange to your chemist. ';
+   text+='Tap the sound button on any pack to hear it.';
+  }
+  speakText(text,'cabinet-summary');
  }
  const video=useRef<HTMLVideoElement>(null);
  const scannerControls=useRef<IScannerControls|null>(null);
@@ -132,6 +186,19 @@ export default function Home(){
    faqRequested.current=false;
    document.getElementById('medpro-faq')?.focus();
   }
+ },[view,dadiMode]);
+
+ // Leaving Dadi Mode must stop any read-aloud immediately; re-entering the
+ // cabinet greets the elder with one spoken summary (once per visit).
+ useEffect(()=>{if(!dadiMode)stopSpeech();},[dadiMode]);
+ useEffect(()=>{
+  if(view==='cabinet'&&dadiMode){
+   if(dadiSummarySpoken.current)return;
+   dadiSummarySpoken.current=true;
+   const timer=window.setTimeout(()=>{if('speechSynthesis' in window)speakCabinetSummary();},700);
+   return ()=>{window.clearTimeout(timer);};
+  }
+  dadiSummarySpoken.current=false;
  },[view,dadiMode]);
 
  function stopCamera(){cameraEpoch.current++;cancelled.current=true;scannerControls.current?.stop();scannerControls.current=null;setCameraRunning(false);}
@@ -212,11 +279,12 @@ export default function Home(){
  function applyCatalogRecord(record:CatalogRecord){setDraft(catalogMedicine(record));setEditingKey(null);setModal('manual');setError('');}
  const filtered=activeItems.filter(m=>`${m.product} ${m.batch} ${m.owner||''}`.toLowerCase().includes(query.toLowerCase())).filter(m=>filter==='all'||filter==='personal'&&m.origin==='manual').filter(m=>ownerFilter===null||((m.owner||'Me').trim()||'Me')===ownerFilter);
  const cabinetProfiles=Array.from(new Set(['Me','Dad','Dadi','Mom',...members,...activeItems.map(m=>(m.owner||'').trim()).filter(Boolean)]));
+ const dadiStats=dadiMode&&view==='cabinet'?cabinetSummary():null;
  // The chemist slip quotes an official NSQ/spurious decision; only an exact
  // matched record may generate one — never a mere batch overlap.
  const pendingMatch=pending&&offlineSnapshot&&!pending.demo?batchStatus(pending,offlineSnapshot.records,simulation).matches.find(x=>x.match==='exact')?.record||null:null;
 
- function MedicineTile({m}:{m:Medicine}){const offline=offlineSnapshot?batchStatus(m,offlineSnapshot.records,simulation):null;const checked=offline?{state:offline.state==='simulated'?'matching-alert':offline.state,label:offline.state==='simulated'?'SIMULATED · Matching quality alert found':offline.state==='matching-alert'?'Matching quality alert found':offline.state==='confirmation-needed'?'Details need confirmation':'No matching alert found in the checked records',checkedAt:offlineSnapshot!.generatedAt}:checks[key(m)];const ownerLabel=(m.owner||'Me').trim()||'Me';const exp=evaluateExpiry(m.expiry);return <button className={"medicine-tile"+(dadiMode?' dadi-tile':'')} onClick={()=>details(m)}><div className="tile-top"><span className={'med-status-badge '+(checked?.state||'')}>{checked?.state==='matching-alert'||checked?.state==='confirmation-needed'?<AlertTriangle size={14}/>:<Info size={14}/>} {t(checked?.label||'Label details only')}</span><span style={{fontSize:'0.75rem',fontWeight:700,padding:'3px 8px',borderRadius:'6px',background:exp.bgColor,color:exp.color}}>{hi?exp.label.hi:exp.label.en}</span><ChevronRight size={19}/></div><div className="tile-body"><div className="tile-heading">{dadiMode&&m.photo?<img className="dadi-pack-photo" src={m.photo} alt={t("Saved pack photo","सहेजी गई पैक फ़ोटो")}/>:<span className="med-symbol"><Pill size={23}/></span>}<div><h3>{m.product}</h3><p className="tile-strength">{m.strength} · {m.form}</p></div></div><dl className="tile-details"><div><dt>{t("Manufacturer")}</dt><dd>{m.manufacturer||'Not provided'}</dd></div><div><dt>{t("Batch number")}</dt><dd>{m.batch||'Not added'}</dd></div><div><dt>{t("Expiry status")}</dt><dd style={{color:exp.color,fontWeight:600}}>{hi?exp.label.hi:exp.label.en} ({m.expiry||'N/A'})</dd></div><div><dt>{t("Owner")}</dt><dd>{t(ownerLabel)}</dd></div></dl></div><div className="tile-last-checked"><Info size={14}/>{t(offline?"Snapshot retrieved:":"Last checked:")}{' '}{checked?new Date(checked.checkedAt).toLocaleString(hi?'hi-IN':'en-IN'):t('not checked yet')}</div></button>;}
+ function MedicineTile({m}:{m:Medicine}){const offline=offlineSnapshot?batchStatus(m,offlineSnapshot.records,simulation):null;const checked=offline?{state:offline.state==='simulated'?'matching-alert':offline.state,label:offline.state==='simulated'?'SIMULATED · Matching quality alert found':offline.state==='matching-alert'?'Matching quality alert found':offline.state==='confirmation-needed'?'Details need confirmation':'No matching alert found in the checked records',checkedAt:offlineSnapshot!.generatedAt}:checks[key(m)];const ownerLabel=(m.owner||'Me').trim()||'Me';const exp=evaluateExpiry(m.expiry);return <button className={"medicine-tile"+(dadiMode?' dadi-tile':'')} onClick={()=>details(m)}><div className="tile-top"><span className={'med-status-badge '+(checked?.state||'')}>{checked?.state==='matching-alert'||checked?.state==='confirmation-needed'?<AlertTriangle size={14}/>:<Info size={14}/>} {t(checked?.label||'Label details only')}</span><span style={{fontSize:'0.75rem',fontWeight:700,padding:'3px 8px',borderRadius:'6px',background:exp.bgColor,color:exp.color}}>{hi?exp.label.hi:exp.label.en}</span>{dadiMode&&<span role="button" tabIndex={0} aria-label={t("Listen to this pack","इस पैक की जानकारी सुनें")} className={'dadi-speak-chip'+(speakingId===key(m)?' speaking':'')} onClick={event=>{event.stopPropagation();speakMedicine(m,checked?.state||null,exp.status);}} onKeyDown={event=>{if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();speakMedicine(m,checked?.state||null,exp.status);}}}><Volume2 size={20}/>{t('Listen','सुनें')}</span>}<ChevronRight size={19}/></div><div className="tile-body"><div className="tile-heading">{dadiMode&&m.photo?<img className="dadi-pack-photo" src={m.photo} alt={t("Saved pack photo","सहेजी गई पैक फ़ोटो")}/>:<span className="med-symbol"><Pill size={23}/></span>}<div><h3>{m.product}</h3><p className="tile-strength">{m.strength} · {m.form}</p></div></div><dl className="tile-details"><div><dt>{t("Manufacturer")}</dt><dd>{m.manufacturer||'Not provided'}</dd></div><div><dt>{t("Batch number")}</dt><dd>{m.batch||'Not added'}</dd></div><div><dt>{t("Expiry status")}</dt><dd style={{color:exp.color,fontWeight:600}}>{hi?exp.label.hi:exp.label.en} ({m.expiry||'N/A'})</dd></div><div><dt>{t("Owner")}</dt><dd>{t(ownerLabel)}</dd></div></dl></div><div className="tile-last-checked"><Info size={14}/>{t(offline?"Snapshot retrieved:":"Last checked:")}{' '}{checked?new Date(checked.checkedAt).toLocaleString(hi?'hi-IN':'en-IN'):t('not checked yet')}</div></button>;}
  return <LanguageProvider hindi={hi}><PremiumMotion paused={!!modal}/><div className={'site redesigned view-'+view+(dadiMode?' dadi-mode-active':'')}>
   <header className="site-header" inert={!!modal}>
    <button className="logo" aria-label={t("MedPro home")} onClick={()=>go('home')}>
@@ -250,7 +318,7 @@ export default function Home(){
    <details className="demo-studio" open={demoItems!==null}><summary><span className="demo-studio-dot"/>{t('Demo studio','डेमो स्टूडियो')}<span>{t(demoItems!==null?'Sample cabinet active · open controls':'Try MedPro with a sample cabinet',demoItems!==null?'नमूना कैबिनेट सक्रिय · नियंत्रण खोलें':'नमूना कैबिनेट के साथ MedPro देखें')}</span><ChevronDown size={16}/></summary>   <OfflineCache recordsReady={!!offlineSnapshot}/>
    <DemoToolbar active={demoItems!==null} simulated={simulation} unread={unread} ready={!!offlineSnapshot} onLoad={loadDemo} onSimulate={()=>{setSimulation(true);setUnread(true);}} onReset={loadDemo} onExit={()=>{setDemoItems(null);setSimulation(false);setUnread(false);setOwnerFilter(null);}} onRead={()=>setUnread(false)}/>
 </details>
-   {view==='home'&&dadiMode&&<section className="section-wrap dadi-start"><h1>{t('My medicines','मेरी दवाएँ')}</h1><p>{t('Check a strip or open a saved pack to hear its details.','स्ट्रिप जाँचें या जानकारी सुनने के लिए सहेजा हुआ पैक खोलें।')}</p><button className="btn dark" onClick={openScanner}>{t('Check a strip','स्ट्रिप जाँचें')}</button><button className="btn outline" onClick={()=>{setOwnerFilter(null);go('cabinet');}}>{t('My cabinet','मेरी दवाओं का कैबिनेट')}</button></section>}
+   {view==='home'&&dadiMode&&<section className="section-wrap dadi-start"><h1>{t('My medicines','मेरी दवाएँ')}</h1><p>{t('Check a strip or open a saved pack to hear its details.','स्ट्रिप जाँचें, या कैबिनेट खोलकर किसी भी पैक पर "सुनें" दबाइए — जानकारी बड़ी आवाज़ में मिलेगी।')}</p><button className="btn dark" onClick={openScanner}>{t('Check a strip','स्ट्रिप जाँचें')}</button><button className="btn outline" onClick={()=>{setOwnerFilter(null);go('cabinet');}}>{t('My cabinet','मेरी दवाओं का कैबिनेट')}</button></section>}
    {view==='home'&&!dadiMode&&<ProductWalkthrough
     onScan={openScanner} onCabinet={()=>go('cabinet')} onAlerts={()=>go('alerts')}
     onDadiMode={()=>{setDadiMode(true);go('home');}}
@@ -272,6 +340,22 @@ export default function Home(){
        <button className="btn outline cabinet-family" aria-label={t("Family sharing","परिवार के साथ साझा करें")} onClick={()=>go('family')}><UserRound size={20}/></button>
       </div>
      </div>
+     {dadiMode&&<div className="dadi-voice-strip" role="region" aria-label={t("Dadi voice controls","दादी आवाज़ नियंत्रण")}>
+      <div className="dadi-voice-summary">
+       <b>{t('Hear your cabinet out loud','अपना कैबिनेट बड़ी आवाज़ में सुनिए')}</b>
+       <p>{t('Tap Listen on any saved pack. I will read the name, the batch, the expiry and any warning.','किसी भी पैक पर सुनें दबाइए। मैं नाम, बैच, एक्सपायरी और चेतावनी सब बता दूँगी।')}</p>
+       {dadiStats&&(dadiStats.alerts>0||dadiStats.expired>0||dadiStats.expiring>0)&&<div className="dadi-voice-counts">
+        {dadiStats.alerts>0&&<span className="c-alert"><AlertTriangle size={16}/>{t(`${dadiStats.alerts} alert${dadiStats.alerts===1?'':'s'}`,`${dadiStats.alerts} अलर्ट`)}</span>}
+        {dadiStats.expired>0&&<span className="c-expired">{t(`${dadiStats.expired} expired`,`${dadiStats.expired} की एक्सपायरी निकली`)}</span>}
+        {dadiStats.expiring>0&&<span className="c-expiring">{t(`${dadiStats.expiring} expiring soon`,`${dadiStats.expiring} जल्द खत्म`)}</span>}
+       </div>}
+      </div>
+      <div className="dadi-voice-actions">
+       <button type="button" onClick={speakCabinetSummary} aria-pressed={speakingId==='cabinet-summary'} className={speakingId==='cabinet-summary'?'active':''}><Volume2 size={24}/>{t('Hear the whole cabinet','पूरा कैबिनेट सुनें')}</button>
+       <button type="button" aria-pressed={dadiSlow} className={dadiSlow?'active':''} title={t('Slower voice','धीमी आवाज़')} onClick={()=>{const next=!dadiSlow;setDadiSlow(next);stopSpeech();}}><Volume1 size={24}/>{t('Slow','धीरे')}</button>
+       <button type="button" onClick={stopSpeech} disabled={speakingId===null}><Square size={22}/>{t('Stop','रोकें')}</button>
+      </div>
+     </div>}
      <div className="cabinet-profile-row" role="group" aria-label={t("Family members")}>
       {cabinetProfiles.map(profile=>(
        <button key={profile} type="button" aria-pressed={ownerFilter===profile} onClick={()=>setOwnerFilter(ownerFilter===profile?null:profile)} className={'profile-chip'+(ownerFilter===profile?' active':'')}>
@@ -385,7 +469,7 @@ export default function Home(){
  setNewMember(name?null:'');
  if(name)setDraft({...draft,owner:name});
 }}>{Array.from(new Set([...cabinetProfiles,draft.owner?.trim()||'Me'])).map(name=><option key={name} value={name}>{t(name)}</option>)}<option value="">{t('Add a new member…','नया सदस्य जोड़ें…')}</option></select></label>{newMember!==null&&<label className="field">{t('New member name','नए सदस्य का नाम')}<input required maxLength={80} value={newMember} onChange={event=>setNewMember(event.target.value)} placeholder={t('e.g. Brother or Cousin','जैसे भाई या कज़िन')}/></label>}</div><label className="field">{t("Expiry month (optional)")}<input type="month" value={draft.expiry||''} onChange={e=>setDraft({...draft,expiry:e.target.value})}/></label></div><label className="field">{t("Private note (optional)")}<textarea maxLength={500} rows={2} value={draft.notes||''} onChange={e=>setDraft({...draft,notes:e.target.value})}/></label><button className="btn coral full" type="submit">{t(editingKey?'Save changes':'Confirm and save')}<Check size={18}/></button></form><SafetyPanel medicine={draft} snapshot={offlineSnapshot} simulation={simulation}/></>}
-   {modal==='details'&&pending&&<><span className="origin">{t(pending.demo?"FICTIONAL DEMO ENTRY":"YOUR ENTRY")}</span><h2 id="modal-title">{pending.product}</h2><p className="modal-description">{pending.strength} · {pending.form}</p>{dadiMode&&pending.photo&&<img className="dadi-pack-photo" src={pending.photo} alt={t('Saved pack photo','सहेजी गई पैक फ़ोटो')}/>}<div className="safety-actions">{dadiMode&&<button className="btn dark" onClick={()=>speakMedicine(pending)}><Volume2 size={18}/>{t('Read this pack to me','पैक की जानकारी सुनें')}</button>}{!pending.demo&&<button className="btn outline" onClick={()=>refill(pending)}>{t('Add new strip','नई स्ट्रिप जोड़ें')}</button>}</div><SafetyPanel medicine={pending} simulation={simulation} snapshot={offlineSnapshot}/>{pending.notes&&<div className="medicine-note"><NotebookPen size={18}/><p>{pending.notes}</p></div>}<div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',margin:'0.75rem 0'}}><button type="button" className="btn outline" style={{fontSize:'0.9rem'}} onClick={()=>speakMedicine(pending)}><Volume2 size={16}/>{speakingMed===pending.product?(hi?'बोल रहे हैं...':'Speaking...'):(hi?'दादी आवाज़ में सुनें':'Listen (Hindi Voice)')}</button><button type="button" className="btn outline" style={{fontSize:'0.9rem',color:'#0f766e',borderColor:'#0f766e'}} onClick={()=>window.open('https://www.google.com/maps/search/Jan+Aushadhi+Kendra+near+me','_blank')}><MapPin size={16}/>{hi?'जन औषधि केंद्र खोजें':'Find Jan Aushadhi Kendra'}</button>{pendingMatch&&<button type="button" className="btn outline danger" style={{fontSize:'0.9rem'}} onClick={()=>setChemistSlip({product:pending.product,batch:pending.batch,manufacturer:pendingMatch.manufacturer||pending.manufacturer,expiry:pending.expiry,issue:pendingMatch.issue||undefined,laboratory:pendingMatch.laboratory||undefined,period:pendingMatch.period,sourceUrl:pendingMatch.sourceUrl})}><FileText size={16}/>{hi?'केमिस्ट शिकायत पर्ची':'Chemist Alert Slip'}</button>}</div><div className="detail-actions"><button className="btn outline" onClick={()=>manual(pending)}><Pencil size={16}/>{t("Edit")}</button><button className="btn outline danger" onClick={()=>setDeleteConfirm(true)}><Trash2 size={16}/>{t("Remove")}</button></div>{deleteConfirm&&<div className="delete-confirm"><p>{t("Remove this entry from the local cabinet?")}</p><button className="btn danger-solid" onClick={()=>{setActiveItems((old:Medicine[]|null)=>removeMedicine(old||[],key(pending)));close();setNotice('Medicine removed.');}}>{t("Yes, remove")}</button><button className="text-link" onClick={()=>setDeleteConfirm(false)}>{t("Keep it")}</button></div>}<button className="text-link centered" onClick={()=>go('alerts')}>{t("Check official Indian alerts")}<ArrowUpRight size={17}/></button></>}
+   {modal==='details'&&pending&&<><span className="origin">{t(pending.demo?"FICTIONAL DEMO ENTRY":"YOUR ENTRY")}</span><h2 id="modal-title">{pending.product}</h2><p className="modal-description">{pending.strength} · {pending.form}</p>{dadiMode&&pending.photo&&<img className="dadi-pack-photo" src={pending.photo} alt={t('Saved pack photo','सहेजी गई पैक फ़ोटो')}/>}<div className="safety-actions">{dadiMode&&<button className="btn dark" onClick={()=>speakMedicine(pending,null,evaluateExpiry(pending.expiry).status)}><Volume2 size={18}/>{t('Read this pack to me','पैक की जानकारी सुनें')}</button>}{!pending.demo&&<button className="btn outline" onClick={()=>refill(pending)}>{t('Add new strip','नई स्ट्रिप जोड़ें')}</button>}</div><SafetyPanel medicine={pending} simulation={simulation} snapshot={offlineSnapshot}/>{pending.notes&&<div className="medicine-note"><NotebookPen size={18}/><p>{pending.notes}</p></div>}<div style={{display:'flex',gap:'0.5rem',flexWrap:'wrap',margin:'0.75rem 0'}}><button type="button" className="btn outline" style={{fontSize:'0.9rem'}} onClick={()=>speakMedicine(pending,null,evaluateExpiry(pending.expiry).status)}><Volume2 size={16}/>{speakingId===key(pending)?(hi?'बोल रहे हैं...':'Speaking...'):(hi?'दादी आवाज़ में सुनें':'Listen (Hindi Voice)')}</button><button type="button" className="btn outline" style={{fontSize:'0.9rem',color:'#0f766e',borderColor:'#0f766e'}} onClick={()=>window.open('https://www.google.com/maps/search/Jan+Aushadhi+Kendra+near+me','_blank')}><MapPin size={16}/>{hi?'जन औषधि केंद्र खोजें':'Find Jan Aushadhi Kendra'}</button>{pendingMatch&&<button type="button" className="btn outline danger" style={{fontSize:'0.9rem'}} onClick={()=>setChemistSlip({product:pending.product,batch:pending.batch,manufacturer:pendingMatch.manufacturer||pending.manufacturer,expiry:pending.expiry,issue:pendingMatch.issue||undefined,laboratory:pendingMatch.laboratory||undefined,period:pendingMatch.period,sourceUrl:pendingMatch.sourceUrl})}><FileText size={16}/>{hi?'केमिस्ट शिकायत पर्ची':'Chemist Alert Slip'}</button>}</div><div className="detail-actions"><button className="btn outline" onClick={()=>manual(pending)}><Pencil size={16}/>{t("Edit")}</button><button className="btn outline danger" onClick={()=>setDeleteConfirm(true)}><Trash2 size={16}/>{t("Remove")}</button></div>{deleteConfirm&&<div className="delete-confirm"><p>{t("Remove this entry from the local cabinet?")}</p><button className="btn danger-solid" onClick={()=>{setActiveItems((old:Medicine[]|null)=>removeMedicine(old||[],key(pending)));close();setNotice('Medicine removed.');}}>{t("Yes, remove")}</button><button className="text-link" onClick={()=>setDeleteConfirm(false)}>{t("Keep it")}</button></div>}<button className="text-link centered" onClick={()=>go('alerts')}>{t("Check official Indian alerts")}<ArrowUpRight size={17}/></button></>}
    {modal==='about'&&<><span className="eyebrow">{t("TRANSPARENCY, ALWAYS")}</span><h2 id="modal-title">{t("An honest start.")}<br/><em>{t("A clear picture.")}</em></h2><p className="modal-description">{t("MedPro is a prototype for storing packaging details and consent-based family awareness.")}</p><div className="about-sections"><div><Check size={20}/><div><h3>{t("Works without keys")}</h3><p>{t("Camera or photo barcode decoding, manual cabinet entries, locally stored data, and Indian medicine-name search when its public provider is available.")}</p></div></div><div><LockKeyhole size={20}/><div><h3>{t("Requires owner setup")}</h3><p>{t("Cloud accounts and family inbox require Supabase. GTIN identification requires provider coverage and an optional key.")}</p></div></div><div><AlertTriangle size={20}/><div><h3>{t("Indian batch-alert limitation")}</h3><p>{t("MedPro links to live official CDSCO pages. Quality history searches the listed official report tables and shows coverage gaps. It cannot authenticate medicines, provide a complete supply-chain history, recommend treatment, or issue safety verdicts.")}</p></div></div></div></>}
    {modal==='reset'&&<><span className="eyebrow">{t("YOUR DEVICE STORAGE")}</span><h2 id="modal-title">{t("Clear your local cabinet?")}</h2><p className="modal-description">{t("This removes local entries from this browser. It does not delete any saved Supabase cloud cabinet or family messages.")}</p><button className="btn coral full" onClick={reset}>{t("Clear local entries")}<RotateCcw size={17}/></button><button className="text-link centered" onClick={close}>{t("Keep them")}</button></>}
    {error&&<div className="form-error" role="alert"><AlertTriangle size={19}/><p>{t(error)}</p></div>}
