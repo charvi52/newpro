@@ -7,6 +7,7 @@ import {
   SlidersHorizontal,Square,Trash2,Upload,UserRound,Users,Volume1,Volume2,X
 } from 'lucide-react';
 import ConflictChecker from '@/components/conflict-checker';
+import SaltOverlap from '@/components/salt-overlap';
 import SastiDawaFinder from '@/components/sasti-dawa-finder';
 import ChemistAlertSlip, { type ChemistSlipData } from '@/components/chemist-alert-slip';
 import { evaluateExpiry } from '@/lib/medicine-resolver';
@@ -381,6 +382,7 @@ export default function Home(){
       </div>
      </div>
      <ConflictChecker medicines={activeItems} hindi={hi}/>
+     <SaltOverlap medicines={activeItems} hindi={hi}/>
      {filtered.length>0?(
       <div className="cabinet-grid">
        {filtered.map(m=><MedicineTile key={key(m)} m={m}/>)}
