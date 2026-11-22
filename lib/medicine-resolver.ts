@@ -1,3 +1,6 @@
+import type { DrugDbProduct } from './drugdb';
+import { lookupDrugDb } from './drugdb';
+
 export interface ResolvedMedicine {
   query: string;
   matchedName: string;
@@ -19,6 +22,8 @@ export interface ResolvedMedicine {
   /** False when prices come from model memory instead of a verified source; UI must not show them as fact. */
   priceVerified?: boolean;
   isOnlineCandidate?: boolean;
+  /** True for DrugDB catalogue entries: the MRP is catalogue data, to confirm against the printed pack. */
+  catalogue?: boolean;
 }
 
 export interface DrugInteraction {
@@ -570,15 +575,6 @@ export const INTERACTION_RULES: Array<{
 ];
 
 /**
- * Whether the server is configured for live AI pharmacopoeia search. When false,
- * resolveMedicine only knows the bundled curated entries, and the resolve route
- * must say so instead of implying the medicine does not exist.
- */
-export function hasLiveSearch(): boolean {
-  return Boolean(process.env.GEMINI_API_KEY);
-}
-
-/**
  * Resolve any medicine name (Augmentin, Pan-D, Allegra, etc.) to its active salt,
  * Jan Aushadhi generic equivalent, prices and precautions.
  */
@@ -590,7 +586,136 @@ export function hasLiveSearch(): boolean {
  */
 export interface ResolveContext{providerFailed?:boolean}
 
+export interface ResolveOptions {
+  /**
+   * Look the name up in the keyless public DrugDB catalogue before touching any
+   * live AI provider. The resolve route enables this so any medicine name can
+   * resolve without a Gemini key or free-tier quota.
+   */
+  catalogueFirst?: boolean;
+}
+
 type PopularMedicine = (typeof POPULAR_INDIAN_MEDICINES)[number];
+
+/** "Paracetamol (650mg)" → {salt:'Paracetamol', strength:'650mg'}; combos join with " + ". */
+export function parseComposition(composition: string): { salt: string; strength: string } {
+  const names: string[] = [];
+  const strengths: string[] = [];
+  const re = /([A-Za-z][A-Za-z0-9 .+\-/]*?)\s*\(([^)]*)\)/g;
+  let match: RegExpExecArray | null;
+  while ((match = re.exec(composition)) !== null) {
+    const name = match[1].trim();
+    const strength = match[2].trim();
+    if (name) names.push(name);
+    if (strength) strengths.push(strength);
+  }
+  if (!names.length) return { salt: composition.trim(), strength: '' };
+  return { salt: names.join(' + '), strength: strengths.join(' + ') };
+}
+
+function normSalt(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9+]/g, '');
+}
+
+function normStrength(value: string): string {
+  return value.toLowerCase().replace(/[^a-z0-9.%+/]/g, '');
+}
+
+/** Strip the dosage form suffix so "Dolo 650 Tablet" reads as "Dolo 650". */
+export function cleanCatalogueBrand(name: string): string {
+  return name
+    .replace(/\s+(tablets?|capsules?|syrup|suspension|injection|eye drops?|ear drops?|nasal spray|cream|gel|ointment|inhaler|sachet|solution|lotion|powder|granules|drops?)$/i, '')
+    .trim();
+}
+
+/**
+ * Build a resolved result from a real DrugDB catalogue record. Prices are the
+ * catalogue MRP (marked `catalogue: true`), not a live pharmacy quote. Clinical
+ * guidance is reused from the curated pharmacopoeia only when the exact salt is
+ * covered there; otherwise the card says plainly that the bundled guide does not
+ * cover it — no invented uses or dosages.
+ */
+export function drugDbToResolved(query: string, product: DrugDbProduct): ResolvedMedicine {
+  const { salt, strength } = parseComposition(product.composition);
+  const brand = cleanCatalogueBrand(product.name) || product.name;
+  const saltKey = normSalt(salt);
+  const strengthKey = normStrength(strength);
+
+  const sameSalt = POPULAR_INDIAN_MEDICINES.find((item) => normSalt(item.salt) === saltKey);
+  // A cheaper generic is only comparable when salt AND strength agree; a 500 mg
+  // generic is not a substitute for a 650 mg pack.
+  const samePack = sameSalt && normStrength(sameSalt.strength) === strengthKey ? sameSalt : undefined;
+  const genericPrice = samePack?.genericPrice ?? 0;
+  const savingsPercent = samePack && genericPrice > 0
+    ? Math.max(0, Math.round(((product.mrp - genericPrice) / product.mrp) * 100))
+    : 0;
+
+  const clamp = (value: string, max = 320) => {
+    const text = value.trim().replace(/\s+/g, ' ');
+    return text.length > max ? `${text.slice(0, max).replace(/\s+\S*$/, '')}…` : text;
+  };
+  const benefits = product.details?.benefits ? clamp(product.details.benefits) : '';
+  const howToUse = product.details?.howToUse ? clamp(product.details.howToUse) : '';
+  const primaryUse = (product.details?.primaryUse || []).filter(Boolean).slice(0, 4);
+
+  const purpose = sameSalt
+    ? { en: sameSalt.purposeEn, hi: sameSalt.purposeHi }
+    : benefits
+      ? {
+        en: benefits,
+        hi: primaryUse.length
+          ? `सार्वजनिक दवा सूची में इसका उपयोग दर्ज है: ${primaryUse.join(', ')}। हिंदी में पूरी जानकारी डॉक्टर या फार्मासिस्ट से पूछें।`
+          : 'इस दवा का विवरण सार्वजनिक दवा सूची में अंग्रेज़ी में है — इसे किस काम के लिए लेना है, डॉक्टर या फार्मासिस्ट से पूछें।',
+      }
+      : primaryUse.length
+        ? {
+          en: `Used for: ${primaryUse.join(', ')}.`,
+          hi: `सार्वजनिक दवा सूची में इसका उपयोग दर्ज है: ${primaryUse.join(', ')}। पूरी जानकारी डॉक्टर या फार्मासिस्ट से पूछें।`,
+        }
+        : {
+          en: "MedPro's bundled guide does not cover this salt yet — ask your doctor or pharmacist what it is for.",
+          hi: 'MedPro की गाइड में यह साल्ट अभी शामिल नहीं है — इसे किस काम के लिए लेना है, डॉक्टर या फार्मासिस्ट से पूछें।',
+        };
+  const timing = sameSalt
+    ? { en: sameSalt.timingEn, hi: sameSalt.timingHi }
+    : howToUse
+      ? {
+        en: howToUse,
+        hi: 'इस दवा का उपयोग डॉक्टर के बताए अनुसार करें; पैक के निर्देश पढ़ें।',
+      }
+      : {
+        en: 'Follow the dose printed on your prescription and pack.',
+        hi: 'अपने पर्चे और पैक पर लिखी खुराक का पालन करें।',
+      };
+  const precaution = sameSalt
+    ? { en: sameSalt.precautionEn, hi: sameSalt.precautionHi }
+    : {
+      en: 'Confirm with your doctor or pharmacist before use.',
+      hi: 'उपयोग से पहले डॉक्टर या फार्मासिस्ट से पुष्टि करें।',
+    };
+
+  return {
+    query,
+    matchedName: product.name,
+    brand,
+    salt: salt || product.composition || 'Not listed in the catalogue record',
+    strength: strength || 'As printed on the pack',
+    form: product.form ? product.form.toLowerCase() : 'not listed',
+    manufacturer: product.manufacturer,
+    brandPrice: product.mrp,
+    genericPrice,
+    savingsPercent,
+    janAushadhiName: samePack?.janAushadhiName || '',
+    janAushadhiCode: samePack?.janAushadhiCode || '',
+    purpose,
+    timing,
+    precaution,
+    source: product.source,
+    sourceUrl: product.sourceUrl,
+    priceVerified: true,
+    catalogue: true,
+  };
+}
 
 function curatedMedicineResult(query: string, item: PopularMedicine): ResolvedMedicine {
   const savings = Math.max(0, Math.round(((item.brandPrice - item.genericPrice) / item.brandPrice) * 100));
@@ -616,7 +741,7 @@ function curatedMedicineResult(query: string, item: PopularMedicine): ResolvedMe
   };
 }
 
-export async function resolveMedicine(query: string, context?: ResolveContext): Promise<ResolvedMedicine | null> {
+export async function resolveMedicine(query: string, context?: ResolveContext, options?: ResolveOptions): Promise<ResolvedMedicine | null> {
   const q = query.trim().toLowerCase();
   // Free-text lookup on a curated brand list: too short a query Matches far too many entries.
   if (q.length < 3) return null;
@@ -631,6 +756,19 @@ export async function resolveMedicine(query: string, context?: ResolveContext): 
     });
     if (exactBrand) {
       return curatedMedicineResult(query, item);
+    }
+  }
+
+  // 0b. Keyless public catalogue: resolves any listed Indian medicine with a
+  // real catalogue MRP, so arbitrary names work without a Gemini key. Only the
+  // resolve route opts in; unit tests stay offline and deterministic.
+  if (options?.catalogueFirst) {
+    try {
+      const product = await lookupDrugDb(query);
+      if (product) return drugDbToResolved(query, product);
+    } catch (err) {
+      console.error('[DrugDB catalogue error]', err instanceof Error ? err.message : err);
+      if (context) context.providerFailed = true;
     }
   }
 

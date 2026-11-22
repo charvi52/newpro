@@ -33,6 +33,7 @@ Open the app (no sign-in needed), then:
 - **Add manually** → `Dolo 650` / `Micro Labs Ltd` / `ABC123XYZ` → CLEARED against the indexed records.
 - Add `Pan-D` and `Autrin` plus an `Ecosprin 75` to see the conflict checker flag duplicate paracetamol and a bleeding-risk combination.
 - Load the demo cabinet to see the **same-salt checker** warn when two packs share the same active salt (or the same treatment family, like PPI/NSAID/antihistamine) — a refill-strip warning vs. a double-dose warning, with no guessing for unknown medicines.
+- Open **Dawa Saathi** (header) and type any medicine name, e.g. `Zerodol SP` or `Myatro` → composition, manufacturer and catalogue MRP appear with no API key, and the card asks you to match the price printed on the pack.
 - **Demo studio** (footer of the page) loads a sample cabinet with a simulated caregiver-notification scene, labelled fictional at every step.
 
 Dadi Mode (header button) switches to a simplified start screen, bigger type, pack photos, and Hindi read-aloud. Each pack gets a **Listen** chip, and the cabinet can read a whole-cabinet summary with **Slow** / **Stop** controls. The app works fully offline after the first load; the official-records search runs against the bundled snapshot with the checked tables listed under each result.
@@ -40,7 +41,7 @@ Dadi Mode (header button) switches to a simplified start screen, bigger type, pa
 ## Honest limits
 
 - The bundled snapshot covers the monthly report tables successfully retrieved; every result lists which tables were checked and which periods are missing.
-- The Dawa Saathi guide explains a medicine, surfaces a cheaper alternative, and lists batches of that medicine named in official CDSCO alerts. Its prices come from a live, source-linked search and are never invented without a source.
+- The Dawa Saathi guide explains a medicine, surfaces a cheaper alternative, and lists batches of that medicine named in official CDSCO alerts. Any medicine name is looked up in the public DrugDB catalogue, which supplies the active composition, a catalogue MRP, and the product's real benefits/how-to-use text. The card asks you to match the price printed on the pack. A cheaper Jan Aushadhi alternative appears only when the salt and strength match. Nothing is invented without a source.
 - Cloud backup and family inbox require optional Supabase configuration; unpanelled states are shown honestly rather than hidden.
 - MedPro is a prototype. It does not authenticate medicines, provide a supply-chain history, or offer medical advice — questions about treatment belong with a pharmacist or doctor.
 
@@ -61,13 +62,13 @@ corepack pnpm run render:build
 corepack pnpm run render:start
 ```
 
-Open http://localhost:3000. No API keys are needed for the offline cabinet, barcode/QR decoding, official quality-history search or the demo studio.
+Open http://localhost:3000. No API keys are needed for the offline cabinet, barcode/QR decoding, official quality-history search, any-medicine name search in Dawa Saathi, or the demo studio.
 
 Optional environment variables (see `.env.example`):
 
 | Key | Purpose |
 |---|---|
-| `GEMINI_API_KEY` | Live, source-linked price search in the Dawa Saathi guide |
+| `GEMINI_API_KEY` | Optional AI enrichment only — any-medicine search works without it through the keyless DrugDB catalogue |
 | `OPENMRP_API_KEY` | Optional barcode-to-product lookup provider |
 | `DATABASE_URL` | Optional PostgreSQL cache for barcode/search responses |
 | `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Optional cloud backup and family inbox |

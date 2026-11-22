@@ -8,7 +8,7 @@ Create `.env.local` for local development, or add the same keys in your hosting 
 
 | Variable | Required for | Visibility / notes |
 | --- | --- | --- |
-| `GEMINI_API_KEY` | Live, source-linked price search in Dawa Saathi / Sasti Dawa | Private server only. Without it, the resolver falls back to the bundled curated pharmacopoeia. |
+| `GEMINI_API_KEY` | Optional AI enrichment only. Any medicine name resolves through the keyless DrugDB catalogue without it. | Private server only. |
 | `GEMINI_MODEL` | Override the Gemini model (optional) | Private server only. Defaults to `gemini-flash-lite-latest`. |
 | `OPENMRP_API_KEY` | Optional GTIN-to-product barcode lookup | Private server only. |
 | `DATABASE_URL` | Optional PostgreSQL cache for barcode/search responses | Private server only. |
@@ -44,7 +44,7 @@ Open http://localhost:3000. No API keys are needed for the offline cabinet, barc
 
 ## 4. India-specific medicine data and official alerts
 
-Medicine-name search queries are sent to the [Drug Information Service](https://drugdb.in/), which attributes its catalogue to India's Common Drug Codes / NRCeS/C-DAC. The optional [OpenMRP provider](https://openmrp.in/developers) maps some barcodes to products if you obtain its key; product records may be incomplete or outdated. Always verify the physical pack.
+Medicine-name search uses the public [DrugDB](https://drugdb.in/) catalogue endpoint (`/v1/search`), which needs no API key. It returns the brand, manufacturer, active composition and a catalogue MRP. That MRP is catalogue data, not a live pharmacy quote: the app always asks you to match the price printed on the physical pack. The optional [OpenMRP provider](https://openmrp.in/developers) maps some barcodes to products if you obtain its key; product records may be incomplete or outdated. Always verify the physical pack.
 
 MedPro's quality-alert flow links to official CDSCO sources:
 

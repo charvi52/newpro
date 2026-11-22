@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { hasLiveSearch, resolveMedicine, type ResolveContext } from '@/lib/medicine-resolver';
+import { resolveMedicine, type ResolveContext } from '@/lib/medicine-resolver';
 import { loadOfflineSnapshot, batchStatus } from '@/lib/offline-medical';
 
 export const runtime = 'nodejs';
@@ -78,42 +78,34 @@ async function resolveWithAlerts(q: string, batch: string): Promise<{ body: Reco
       };
     }
 
-    // 1. Resolve medicine, generic alternative, and prices
+    // 1. Resolve medicine, generic alternative, and prices. The keyless public
+    // catalogue is tried before any live AI provider, so arbitrary medicine
+    // names resolve without GEMINI_API_KEY or free-tier quota.
     const providerState: ResolveContext = {};
-    const resolved = await resolveMedicine(q, providerState);
+    const resolved = await resolveMedicine(q, providerState, { catalogueFirst: true });
 
     if (!resolved) {
       if (providerState.providerFailed) {
-        // A provider outage is not evidence about the medicine. Report it
-        // honestly and pin it only for a short window, so a refresh loop
+        // A provider/catalogue outage is not evidence about the medicine. Report
+        // it honestly and pin it only for a short window, so a refresh loop
         // cannot burn the remaining free-tier quota on the same query.
         const body = {
           success: false,
           outage: true,
           retryAfterSeconds: Math.round(FAILURE_TTL_MS / 1000),
-          error: 'Live medicine search is temporarily unavailable on the server. Popular brands such as Augmentin 625, Pan-D or Dolo 650 remain available from the bundled database — or add the pack to your cabinet manually.',
-          errorHi: 'लाइव दवा खोज इस समय सर्वर पर उपलब्ध नहीं है। Augmentin 625, Pan-D या Dolo 650 जैसी लोकप्रिय दवाएँ बंडल सूची से मिल सकती हैं, या पैक को कैबिनेट में मैन्युअली जोड़ें।',
+          error: 'The public medicine catalogue is temporarily unreachable. Popular brands such as Augmentin 625, Pan-D or Dolo 650 remain available from the bundled database — or add the pack to your cabinet manually.',
+          errorHi: 'सार्वजनिक दवा सूची इस समय उपलब्ध नहीं है। Augmentin 625, Pan-D या Dolo 650 जैसी लोकप्रिय दवाएँ बंडल सूची से मिल सकती हैं, या पैक को कैबिनेट में मैन्युअली जोड़ें।',
         };
         cacheSet(key, { body, status: 503, at: new Date().toISOString() });
         return { body, status: 503 };
       }
-      const notFound = hasLiveSearch()
-        ? {
-          body: {
-            success: false,
-            error: 'This does not appear to be a recognized medicine. Please check the spelling and try again.',
-            errorHi: 'यह कोई मान्यता प्राप्त दवा नहीं लगती। कृपया नाम जाँचें और दोबारा प्रयास करें।',
-          },
-        }
-        // Without the live provider only curated entries are searchable; denying that the
-        // medicine exists would be a false claim about a real product.
-        : {
-          body: {
-            success: false,
-            error: 'This medicine is not in the bundled list of popular Indian medicines. Live search for any medicine is currently not configured on the server (missing GEMINI_API_KEY). Try a popular brand such as Augmentin 625, Pan-D or Dolo 650.',
-            errorHi: 'यह दवा बंडल की लोकप्रिय दवाओं की सूची में नहीं है। किसी भी दवा की लाइव खोज अभी सर्वर पर सेट नहीं है (GEMINI_API_KEY गायब)। Augmentin 625, Pan-D या Dolo 650 जैसे लोकप्रिय नाम आज़माएँ।',
-          },
-        };
+      const notFound = {
+        body: {
+          success: false,
+          error: 'This name was not found in the public medicine catalogue. Check the spelling, or add the pack to your cabinet manually.',
+          errorHi: 'यह नाम सार्वजनिक दवा सूची में नहीं मिला। कृपया वर्तनी जाँचें, या पैक को कैबिनेट में मैन्युअली जोड़ें।',
+        },
+      };
       cacheSet(key, { body: notFound.body, status: 404, at: new Date().toISOString() });
       return { ...notFound, status: 404 };
     }

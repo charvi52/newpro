@@ -121,10 +121,14 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
 
     const priceLineHi = resolved.genericPrice > 0
       ? `इसकी सस्ती दवा ${resolved.janAushadhiName} है जो केवल ₹${resolved.genericPrice} में मिलती है।${resolved.priceVerified === false ? ' यह अनुमानित कीमत है, केमिस्ट से पुष्टि करें।' : ''}`
-      : 'कीमत अभी सत्यापित नहीं है, कृपया केमिस्ट से मौजूदा दाम पूछें।';
+      : resolved.brandPrice > 0
+        ? `इसका कैटलॉग MRP ₹${resolved.brandPrice} है, पैक पर छपी कीमत से मिलाएँ।`
+        : 'कीमत अभी सत्यापित नहीं है, कृपया केमिस्ट से मौजूदा दाम पूछें।';
     const priceLineEn = resolved.genericPrice > 0
       ? `A cheaper alternative is ${resolved.janAushadhiName} at just ₹${resolved.genericPrice}.${resolved.priceVerified === false ? ' This is an estimated price, please confirm with your chemist.' : ''}`
-      : 'The price is not verified yet, please ask your chemist for the current rate.';
+      : resolved.brandPrice > 0
+        ? `The catalogue MRP is ₹${resolved.brandPrice}; match it with the price printed on your pack.`
+        : 'The price is not verified yet, please ask your chemist for the current rate.';
 
     const speechText = hindi
       ? `यह दवा ${resolved.brand} है। इसका साल्ट ${resolved.salt} है। यह ${resolved.purpose.hi} के लिए है। इसे ${resolved.timing.hi}। ${priceLineHi}`
@@ -386,6 +390,11 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 <small style={{ color: '#64748b' }}>
                   {resolved.brand} ({resolved.form})
                 </small>
+                {resolved.catalogue && (
+                  <small style={{ display: 'block', color: '#1d4ed8', marginTop: '4px', fontWeight: 600 }}>
+                    {hindi ? 'कैटलॉग MRP — पैक पर छपी कीमत से मिलाएँ' : 'Catalogue MRP — match it with the price printed on your pack'}
+                  </small>
+                )}
                 {resolved.priceVerified === false && resolved.brandPrice > 0 && (
                   <small style={{ display: 'block', color: '#92400e', marginTop: '4px', fontWeight: 600 }}>
                     {hindi ? 'अनुमानित कीमत — पक्की कीमत केमिस्ट से पूछें' : 'Estimated price — confirm the exact MRP with your chemist'}
@@ -488,6 +497,14 @@ export default function SastiDawaFinder({ onClose, hindi, initialQuery }: SastiD
                 </p>
               </div>
             </div>
+
+            {resolved.catalogue && (
+              <p style={{ margin: '0 0 1rem', fontSize: '0.78rem', color: '#64748b' }}>
+                {hindi
+                  ? 'विवरण स्रोत: DrugDB सार्वजनिक दवा सूची — डॉक्टर या फार्मासिस्ट से पुष्टि करें।'
+                  : 'Details source: DrugDB public medicine catalogue — confirm with your doctor or pharmacist.'}
+              </p>
+            )}
 
             {/* 1-Click Google Maps Locator Button */}
             <button
