@@ -6,6 +6,20 @@ MedPro is a family medicine companion for Indian households. Save every pack in 
 
 Made by **Charvi Naresh and Sparsh Rana**.
 
+## Screenshots
+
+| Home | Family cabinet (demo) |
+|---|---|
+| ![MedPro home — Read your pack. Check the batch.](public/screenshots/01-home-hero.png) | ![MedPro family cabinet with demo medicines and safety checks](public/screenshots/02-cabinet-demo.png) |
+
+| Same-salt safety check | Dawa Saathi medicine guide |
+|---|---|
+| ![Same-salt overlap warning in the family cabinet](public/screenshots/03-salt-checker.png) | ![Dawa Saathi medicine guide with cheaper alternative and price context](public/screenshots/04-dawa-saathi.png) |
+
+| Medicine details |
+|---|
+| ![Medicine details view with pack information and safety actions](public/screenshots/05-medicine-detail.png) |
+
 ## How the verdicts work
 
 The exact-match rule is deliberately strict: a verdict of **Matching quality alert found** requires agreement on product/brand, manufacturer and exact batch. Weaker links stay marked **Details need confirmation** and are never shown as matches. A full sweep with no matching alert is reported as **CLEARED — no matching alert in the official records checked** — worded as a verified absence, not a certificate of authenticity. Every record links to its official CDSCO source page.
@@ -18,9 +32,10 @@ Open the app (no sign-in needed), then:
 - **Add manually** → `Killmed 625LB` / `VADSP PHARMACEUTICALS` / `VT252296` → matching quality alert, with a print-ready verification slip and chemist alert slip.
 - **Add manually** → `Dolo 650` / `Micro Labs Ltd` / `ABC123XYZ` → CLEARED against the indexed records.
 - Add `Pan-D` and `Autrin` plus an `Ecosprin 75` to see the conflict checker flag duplicate paracetamol and a bleeding-risk combination.
+- Load the demo cabinet to see the **same-salt checker** warn when two packs share the same active salt (or the same treatment family, like PPI/NSAID/antihistamine) — a refill-strip warning vs. a double-dose warning, with no guessing for unknown medicines.
 - **Demo studio** (footer of the page) loads a sample cabinet with a simulated caregiver-notification scene, labelled fictional at every step.
 
-Dadi Mode (header button) switches to a simplified start screen, bigger type, pack photos and Hindi audio. The app works fully offline after the first load; the official-records search runs against the bundled snapshot with the checked tables listed under each result.
+Dadi Mode (header button) switches to a simplified start screen, bigger type, pack photos, and Hindi read-aloud. Each pack gets a **Listen** chip, and the cabinet can read a whole-cabinet summary with **Slow** / **Stop** controls. The app works fully offline after the first load; the official-records search runs against the bundled snapshot with the checked tables listed under each result.
 
 ## Honest limits
 
