@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { CheckCircle2, ChevronDown, ChevronUp, ShieldAlert } from 'lucide-react';
 import { checkDrugInteractions } from '@/lib/medicine-resolver';
-import type { Medicine } from '@/lib/carely';
+import type { Medicine } from '@/lib/medpro';
 
 interface ConflictCheckerProps {
   medicines: Medicine[];
@@ -142,3 +142,4 @@ export default function ConflictChecker({ medicines, hindi }: ConflictCheckerPro
     </div>
   );
 }
+

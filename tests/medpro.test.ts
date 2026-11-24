@@ -1,7 +1,7 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {type Medicine,fields,key,add,initial,restore,restoreLegacy,resetStorage,STORAGE_KEY,LEGACY_STORAGE_KEY,validateMedicine,updateMedicine,removeMedicine} from '../lib/carely';
+import {type Medicine,fields,key,add,initial,restore,restoreLegacy,resetStorage,STORAGE_KEY,LEGACY_STORAGE_KEY,validateMedicine,updateMedicine,removeMedicine} from '../lib/medpro';
 
 const m:Medicine={product:'Example label name',manufacturer:'Example manufacturer',strength:'Strength from pack',form:'tablet',release:'Unknown',batch:'AB-1234',origin:'manual'};
 
@@ -56,3 +56,4 @@ test('India recall endpoint does not misrepresent US FDA results as Indian cover
  assert.match(recalls,/historyResult/);
  assert.match(recalls,/loadAlerts/);
 });
+

@@ -1,6 +1,6 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
-import {add,restore,mergeCabinets,type Medicine} from '../lib/carely';
+import {add,restore,mergeCabinets,type Medicine} from '../lib/medpro';
 import {mergeAlertSnapshots} from '../lib/alert-snapshot';
 import {manufacturerKey,evaluateAlert,type AlertSnapshot,type QualityAlert} from '../lib/quality-alerts';
 import {historyResult} from '../lib/history-result';
@@ -50,6 +50,7 @@ test('Hindi UI includes the key cabinet, scan and safety outcomes',()=>{
 });
 test('cloud saves send expected revision and surface a concurrent-edit rejection',async()=>{
  const {cloudRequest}=await import('../lib/cloud-client');const config={url:'https://test.invalid',key:'test-key',token:'test-token'};
- const next=await cloudRequest<number>(config,'rpc/carely_save_cabinet','POST',{p_medicines:[medicine],p_expected_revision:4},async(url,init)=>{assert.match(String(url),/rpc\/carely_save_cabinet$/);assert.equal(JSON.parse(init!.body as string).p_expected_revision,4);assert.equal(new Headers(init?.headers).get('authorization'),'Bearer test-token');return Response.json(5);});assert.equal(next,5);
- await assert.rejects(()=>cloudRequest(config,'rpc/carely_save_cabinet','POST',{},async()=>Response.json({message:'Cloud cabinet changed. Load and review again.'},{status:409})),/Cloud cabinet changed/);
+ const next=await cloudRequest<number>(config,'rpc/medpro_save_cabinet','POST',{p_medicines:[medicine],p_expected_revision:4},async(url,init)=>{assert.match(String(url),/rpc\/medpro_save_cabinet$/);assert.equal(JSON.parse(init!.body as string).p_expected_revision,4);assert.equal(new Headers(init?.headers).get('authorization'),'Bearer test-token');return Response.json(5);});assert.equal(next,5);
+ await assert.rejects(()=>cloudRequest(config,'rpc/medpro_save_cabinet','POST',{},async()=>Response.json({message:'Cloud cabinet changed. Load and review again.'},{status:409})),/Cloud cabinet changed/);
 });
+

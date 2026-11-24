@@ -1,7 +1,7 @@
-'use client';
+﻿'use client';
 import {useEffect,useState} from 'react';
 import {AlertTriangle,CheckCircle2,Info,Volume2,Square,Utensils,Shield,IndianRupee,Printer} from 'lucide-react';
-import type {Medicine} from '@/lib/carely';
+import type {Medicine} from '@/lib/medpro';
 import type {ParsedBarcode} from '@/lib/barcode';
 import {batchStatus,findMedicineAlternative,formulationFor,hindiTranscript,loadOfflineSnapshot,localHindiVoice,PMBJP_SOURCE,savings} from '@/lib/offline-medical';
 import {evaluatePackEvidence} from '@/lib/pack-evidence';
@@ -57,3 +57,4 @@ export default function SafetyPanel({medicine:m,simulation=false,snapshot:provid
  <article className="safety-card"><h3><IndianRupee size={24}/>3. Jan Aushadhi &amp; generic prices</h3>{f?<><p className="safety-status no-match"><Info size={22}/><strong>Exact curated formulation match · verify the actual pack</strong></p><h4>{f.generic}</h4><p>Same active salt, strength, dosage form and release type in this curated mapping. This is not a certification that two packs are interchangeable.</p><p className="demo-warning">ILLUSTRATIVE DEMO PRICES · not verified current MRPs or a government price quotation.</p><div className="price-comparison"><div><span>Branded market price · example</span><strong>₹{f.brandPrice.toFixed(2)}</strong><span>₹{(f.brandPrice/f.pack).toFixed(2)} / {f.form}</span></div><div><span>Jan Aushadhi price · example</span><strong>₹{f.genericPrice.toFixed(2)}</strong><span>₹{(f.genericPrice/f.pack).toFixed(2)} / {f.form}</span></div></div><p className="saving-badge">Save ~{savings(f)}% in this illustrative {f.pack}-{f.form} comparison</p><p>PMBJP Kendras operate across India. Confirm the current government MRP, pack size and local availability before purchase.</p><a href={PMBJP_SOURCE} target="_blank" rel="noreferrer">Government PMBJP formulation list (PIB) ↗</a><p className="source-note">Source supports the programme formulation listing, not these example prices. Reviewed 30 October 2026.</p></>:<p>Generic alternative and price comparison unavailable for this exact formulation. No substitution is suggested without a confirmed salt, strength, form and release match.</p>}<p><strong>Ask your registered pharmacist for generic substitution.</strong> Do not change medicine on your own.</p></article>
  </div>;
 }
+

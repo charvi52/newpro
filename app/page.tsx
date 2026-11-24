@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import {useEffect,useRef,useState} from 'react';
 import {
@@ -27,9 +27,9 @@ import OfflineCache from '@/components/offline/cache-ready';
 import {batchStatus,findMedicineAlternative,formulations,loadOfflineSnapshot,sampleCabinet} from '@/lib/offline-medical';
 import type {AlertSnapshot} from '@/lib/quality-alerts';
 import {
-  type Medicine,add,fields,initial,key,LEGACY_STORAGE_KEY,norm,removeMedicine,resetStorage,restore,
+  type Medicine,add,fields,initial,key,LEGACY_STORAGE_KEY,migrateLegacyStorage,norm,removeMedicine,resetStorage,restore,
   restoreLegacy,STORAGE_KEY,updateMedicine,validateMedicine
-} from '@/lib/carely';
+} from '@/lib/medpro';
 import {parseMedicineBarcode,type ParsedBarcode} from '@/lib/barcode';
 import {cameraConstraints,cameraError} from '@/lib/scanner';
 
@@ -213,11 +213,11 @@ export default function Home(){
  function openScanner(){setBarcodeProduct(null);setBarcode(null);setBarcodeMessage('');setCatalogResults([]);setCatalogQuery('');setSelectedRecord(null);setScanMode('camera');open('scan');}
 
  useEffect(()=>{
-  try{if(sessionStorage.getItem('carely:offline-demo')==='active')setDemoItems(sampleCabinet());}catch{}
+  try{if(sessionStorage.getItem('medpro:offline-demo')==='active')setDemoItems(sampleCabinet());}catch{}
   try{
-   const current=localStorage.getItem(STORAGE_KEY);
-   const state=current===null?restoreLegacy(localStorage.getItem(LEGACY_STORAGE_KEY)):restore(current);
-   setItems(state.items);
+    migrateLegacyStorage(localStorage);
+    const current=localStorage.getItem(STORAGE_KEY);
+    const state=current===null?restoreLegacy(localStorage.getItem(LEGACY_STORAGE_KEY)):restore(current);
    try{const saved=JSON.parse(localStorage.getItem(STORAGE_KEY+':checks')||'{}') as Record<string,{state:string;label:string;checkedAt:string}>;setChecks(Object.fromEntries(Object.entries(saved).filter(([,v])=>v&&['matching-alert','confirmation-needed','no-match','unavailable'].includes(v.state)&&typeof v.label==='string'&&Number.isFinite(Date.parse(v.checkedAt)))));}catch{}
 
   }catch{setNotice('Browser storage is unavailable. Changes are temporary.');}
@@ -227,7 +227,7 @@ export default function Home(){
   window.addEventListener('hashchange',hash);setLoaded(true);
   return()=>window.removeEventListener('hashchange',hash);
  },[]);
- useEffect(()=>{if(loaded)try{sessionStorage.setItem('carely:offline-demo',demoItems!==null?'active':'inactive');}catch{}},[demoItems,loaded]);
+ useEffect(()=>{if(loaded)try{sessionStorage.setItem('medpro:offline-demo',demoItems!==null?'active':'inactive');}catch{}},[demoItems,loaded]);
  useEffect(()=>{if(loaded)try{localStorage.setItem(STORAGE_KEY,JSON.stringify({items}));}catch{setNotice('Could not save to browser storage.');}},[items,loaded]);
  useEffect(()=>{if(loaded)try{localStorage.setItem(STORAGE_KEY+':checks',JSON.stringify(checks));}catch{}},[checks,loaded]);
  useEffect(()=>{document.documentElement.lang=hi?'hi':'en';},[hi]);
@@ -522,3 +522,5 @@ export default function Home(){
    )}
  </div></LanguageProvider>;
 }
+
+

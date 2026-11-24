@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 import {useEffect,useRef} from 'react';
 import {attachCardMotion} from '@/lib/card-motion';
 export default function PremiumMotion({paused=false}:{paused?:boolean}){
@@ -12,5 +12,6 @@ export default function PremiumMotion({paused=false}:{paused?:boolean}){
   return()=>{cancelled=true;clearTimeout(timer);motion.removeEventListener('change',change);scene.current?.dispose();scene.current=null;cleanupCards();};
  },[]);
  useEffect(()=>{scene.current?.pause(paused);},[paused]);
- return <div className="carely-capsule-background" aria-hidden="true" data-animation="capsules"><canvas ref={canvas}/><div className="capsule-static-fallback"><i/><i/></div></div>;
+ return <div className="medpro-capsule-background" aria-hidden="true" data-animation="capsules"><canvas ref={canvas}/><div className="capsule-static-fallback"><i/><i/></div></div>;
 }
+

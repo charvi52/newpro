@@ -1,4 +1,4 @@
-import type {Medicine} from './carely';
+﻿import type {Medicine} from './medpro';
 import {searchAlerts,type AlertSnapshot,type QualityAlert} from './quality-alerts';
 export type CuratedMedicine={salt:string;strength:string;form:string;release:string;generic:string;purpose:[string,string];administration:[string,string];warning:[string,string];source:string;brandPrice:number;genericPrice:number;pack:number;brands?:string[]};
 const nhs='https://www.nhs.uk/medicines/';
@@ -71,3 +71,4 @@ export function hindiTranscript(state:string){
  return 'दवा की जानकारी की पुष्टि आवश्यक है। पैक की जानकारी डॉक्टर या फार्मासिस्ट को दिखाएँ। अपनी मर्ज़ी से इलाज न बदलें।';
 }
 export function localHindiVoice(voices:Pick<SpeechSynthesisVoice,'lang'|'localService'>[]){return voices.findIndex(v=>v.localService&&/^hi(?:-|$)/i.test(v.lang));}
+

@@ -1,7 +1,7 @@
-import { test } from 'node:test';
+﻿import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { checkSaltFamilies, checkSaltOverlap } from '../lib/salt-overlap';
-import type { Medicine } from '../lib/carely';
+import type { Medicine } from '../lib/medpro';
 
 const pack = (product: string, owner = 'Me'): Medicine => ({
   product,
@@ -40,3 +40,4 @@ test('identical salts inside one family are excluded from family warnings', () =
   const families = checkSaltFamilies([pack('Pantofix 40', 'Dad'), pack('Pantofix 40', 'Dad')]);
   assert.equal(families.length, 0);
 });
+

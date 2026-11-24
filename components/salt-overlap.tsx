@@ -1,9 +1,9 @@
-'use client';
+﻿'use client';
 
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Layers } from 'lucide-react';
 import { checkSaltFamilies, checkSaltOverlap } from '@/lib/salt-overlap';
-import type { Medicine } from '@/lib/carely';
+import type { Medicine } from '@/lib/medpro';
 
 interface SaltOverlapProps {
   medicines: Medicine[];
@@ -127,3 +127,4 @@ export default function SaltOverlap({ medicines, hindi }: SaltOverlapProps) {
     </div>
   );
 }
+

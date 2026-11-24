@@ -1,10 +1,10 @@
-'use client';
+﻿'use client';
 import {useI18n} from '@/components/language';
 
 import {useEffect,useRef,useState} from 'react';
 import {ArrowUpRight,CheckCircle2,Info,LockKeyhole,Mail,ShieldCheck,TriangleAlert,UserRound} from 'lucide-react';
-import type {Medicine} from '@/lib/carely';
-import {restore,mergeCabinets} from '@/lib/carely';
+import type {Medicine} from '@/lib/medpro';
+import {restore,mergeCabinets} from '@/lib/medpro';
 import MedicineHistory from '@/components/medicine-history';
 import AlertsDataDashboard from '@/components/alerts-data-dashboard';
 import {cloudRequest} from '@/lib/cloud-client';
@@ -46,7 +46,7 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
  useEffect(()=>{sessionRef.current=session;},[session]);
 
  useEffect(()=>{
-  try{const saved=sessionStorage.getItem('carely-account');if(saved){const s=JSON.parse(saved) as Session;if(s?.user?.id&&s.refresh_token)setSession(s);}}
+  try{const saved=sessionStorage.getItem('medpro-account');if(saved){const s=JSON.parse(saved) as Session;if(s?.user?.id&&s.refresh_token)setSession(s);}}
   catch{/* A broken session is safely ignored. */}
   fetch('/api/status',{cache:'no-store'}).then(r=>r.json()).then(v=>setStatus(v as Status)).catch(()=>setStatus(null));
  },[]);
@@ -58,9 +58,9 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
   if(refreshToken.current)return refreshToken.current;
   refreshToken.current=(async()=>{const response=await fetch(`${base}/auth/v1/token?grant_type=refresh_token`,{method:'POST',headers:{apikey:anon,'Content-Type':'application/json'},body:JSON.stringify({refresh_token:current.refresh_token}),signal:AbortSignal.timeout(15000)});
   const data=await response.json() as AuthResponse;
-  if(!response.ok||!data.access_token){sessionStorage.removeItem('carely-account');sessionRef.current=null;setSession(null);throw Error('Your session expired. Please sign in again.');}
+  if(!response.ok||!data.access_token){sessionStorage.removeItem('medpro-account');sessionRef.current=null;setSession(null);throw Error('Your session expired. Please sign in again.');}
   const updated={...data,expires_at:Date.now()+data.expires_in*1000};
-  sessionStorage.setItem('carely-account',JSON.stringify(updated));sessionRef.current=updated;setSession(updated);return updated.access_token;})();
+  sessionStorage.setItem('medpro-account',JSON.stringify(updated));sessionRef.current=updated;setSession(updated);return updated.access_token;})();
   try{return await refreshToken.current;}finally{refreshToken.current=null;}
  }
  async function db<T>(table:string,method='GET',body?:unknown){
@@ -75,21 +75,21 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
   if(!response.ok)throw Error(data.msg||data.error_description||data.message||'Authentication failed.');
   setPassword('');
   if(!data.access_token){setMessage('Check your email to confirm your account, then sign in.');return;}
-  const s={...data,expires_at:Date.now()+data.expires_in*1000};sessionRef.current=s;setSession(s);sessionStorage.setItem('carely-account',JSON.stringify(s));setMessage('Signed in successfully.');
+  const s={...data,expires_at:Date.now()+data.expires_in*1000};sessionRef.current=s;setSession(s);sessionStorage.setItem('medpro-account',JSON.stringify(s));setMessage('Signed in successfully.');
  });}
  async function refreshFamily(){
-  const [g,n]=await Promise.all([db<Grant[]>('carely_family?select=*&order=id.asc'),db<Note[]>('carely_notifications?select=*&order=created_at.desc&limit=30')]);
+  const [g,n]=await Promise.all([db<Grant[]>('medpro_family?select=*&order=id.asc'),db<Note[]>('medpro_notifications?select=*&order=created_at.desc&limit=30')]);
   setGrants(g);setNotes(n);
  }
  async function signOut(){await run(async()=>{
   try{await fetch(`${base}/auth/v1/logout`,{method:'POST',headers:{apikey:anon!,Authorization:`Bearer ${await token()}`}});}finally{
-   sessionStorage.removeItem('carely-account');sessionRef.current=null;setSession(null);setGrants([]);setNotes([]);setCloudReview(null);setMessage('Signed out. Medicines saved on this device have been kept.');
+   sessionStorage.removeItem('medpro-account');sessionRef.current=null;setSession(null);setGrants([]);setNotes([]);setCloudReview(null);setMessage('Signed out. Medicines saved on this device have been kept.');
   }
  });}
 
  useEffect(()=>{
   if(mode!=='family'||!session)return;let active=true;let running=false;
-  const poll=async()=>{if(running||document.hidden)return;running=true;try{const [g,n]=await Promise.all([db<Grant[]>('carely_family?select=*&order=id.asc'),db<Note[]>('carely_notifications?select=*&order=created_at.desc&limit=30')]);if(active){setGrants(g);setNotes(n);}}catch(e){if(active)setMessage(e instanceof Error?e.message:'Could not refresh the shared inbox.');}finally{running=false;}};
+  const poll=async()=>{if(running||document.hidden)return;running=true;try{const [g,n]=await Promise.all([db<Grant[]>('medpro_family?select=*&order=id.asc'),db<Note[]>('medpro_notifications?select=*&order=created_at.desc&limit=30')]);if(active){setGrants(g);setNotes(n);}}catch(e){if(active)setMessage(e instanceof Error?e.message:'Could not refresh the shared inbox.');}finally{running=false;}};
   void poll();const timer=setInterval(()=>void poll(),30000);const focus=()=>void poll();window.addEventListener('focus',focus);document.addEventListener('visibilitychange',focus);
   return()=>{active=false;clearInterval(timer);window.removeEventListener('focus',focus);document.removeEventListener('visibilitychange',focus);};
  },[mode,session?.user.id]);
@@ -125,19 +125,19 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
    <article className="service-panel">{account}</article>
    {mode==='cabinet'&&<article className="service-panel">
     <h3>{t("Cloud cabinet")}</h3><p>{t("Save or retrieve personal medicine entries when signed in. Cloud entries are merged with this device. Review conflicts before confirming a save.")}</p>
-    <div className="service-actions"><button disabled={!session||busy} onClick={()=>void run(async()=>{const rows=await db<Array<{medicines:Medicine[];revision:number}>>('carely_cabinets?select=medicines,revision');if(!rows.length){setMessage('No cloud cabinet saved yet.');return;}const remote=restore(JSON.stringify({items:rows[0].medicines})).items;const merged=mergeCabinets(latestItems.current,remote);onRestore(merged.items);setCloudReview(null);setMessage(`Cloud entries merged. ${merged.conflicts} conflicting entries kept the device details; the cloud copy is unchanged.`);})}>{t("Load cloud cabinet")}</button>
-    <button className="secondary" disabled={!session||busy} onClick={()=>void run(async()=>{const rows=await db<Array<{medicines:Medicine[];revision:number}>>('carely_cabinets?select=medicines,revision');const remote=restore(JSON.stringify({items:rows[0]?.medicines||[]})).items;const merged=mergeCabinets(latestItems.current,remote);setCloudReview({...merged,device:JSON.stringify(latestItems.current),revision:rows[0]?.revision||0});})}>{t("Save to cloud")}</button></div>
-    {cloudReview&&<div className="service-warning"><div><p>{t("Review cloud save:")}{cloudReview.items.length}{t("merged entries.")}{cloudReview.conflicts}{t("conflicting entries will use the device details. Existing cloud-only medicines are retained. A simultaneous cloud edit will stop this save.")}</p><div className="service-actions"><button disabled={busy} onClick={()=>void run(async()=>{if(cloudReview.device!==JSON.stringify(latestItems.current))throw Error('Device medicines changed. Cancel this review and choose Save to cloud again.');const revision=await db<number>('rpc/carely_save_cabinet','POST',{p_medicines:cloudReview.items,p_expected_revision:cloudReview.revision});if(typeof revision!=='number')throw Error('The cloud save returned an invalid revision.');onRestore(mergeCabinets(latestItems.current,cloudReview.items).items);setCloudReview(null);setMessage('Merged cabinet saved to your cloud account.');})}>{t("Confirm cloud save")}</button><button className="secondary" onClick={()=>setCloudReview(null)}>{t("Cancel")}</button></div></div></div>}
+    <div className="service-actions"><button disabled={!session||busy} onClick={()=>void run(async()=>{const rows=await db<Array<{medicines:Medicine[];revision:number}>>('medpro_cabinets?select=medicines,revision');if(!rows.length){setMessage('No cloud cabinet saved yet.');return;}const remote=restore(JSON.stringify({items:rows[0].medicines})).items;const merged=mergeCabinets(latestItems.current,remote);onRestore(merged.items);setCloudReview(null);setMessage(`Cloud entries merged. ${merged.conflicts} conflicting entries kept the device details; the cloud copy is unchanged.`);})}>{t("Load cloud cabinet")}</button>
+    <button className="secondary" disabled={!session||busy} onClick={()=>void run(async()=>{const rows=await db<Array<{medicines:Medicine[];revision:number}>>('medpro_cabinets?select=medicines,revision');const remote=restore(JSON.stringify({items:rows[0]?.medicines||[]})).items;const merged=mergeCabinets(latestItems.current,remote);setCloudReview({...merged,device:JSON.stringify(latestItems.current),revision:rows[0]?.revision||0});})}>{t("Save to cloud")}</button></div>
+    {cloudReview&&<div className="service-warning"><div><p>{t("Review cloud save:")}{cloudReview.items.length}{t("merged entries.")}{cloudReview.conflicts}{t("conflicting entries will use the device details. Existing cloud-only medicines are retained. A simultaneous cloud edit will stop this save.")}</p><div className="service-actions"><button disabled={busy} onClick={()=>void run(async()=>{if(cloudReview.device!==JSON.stringify(latestItems.current))throw Error('Device medicines changed. Cancel this review and choose Save to cloud again.');const revision=await db<number>('rpc/medpro_save_cabinet','POST',{p_medicines:cloudReview.items,p_expected_revision:cloudReview.revision});if(typeof revision!=='number')throw Error('The cloud save returned an invalid revision.');onRestore(mergeCabinets(latestItems.current,cloudReview.items).items);setCloudReview(null);setMessage('Merged cabinet saved to your cloud account.');})}>{t("Confirm cloud save")}</button><button className="secondary" onClick={()=>setCloudReview(null)}>{t("Cancel")}</button></div></div></div>}
     <p className="service-muted"><LockKeyhole size={16}/>{' '}{t("Only your account can access your cabinet. Family grants do not share cabinet records.")}</p>
    </article>}
    {mode==='family'&&<article className="service-panel">
     <h3>{t("Family permissions")}</h3><p>{t("Grant access to a signed-up family member by email, revoke it anytime, and write messages to the in-app inbox. This does not send SMS, WhatsApp, push or automatic drug alerts.")}</p>
-    <form className="service-form" onSubmit={e=>{e.preventDefault();void run(async()=>{await db('carely_family?on_conflict=owner_id,recipient_email','POST',{owner_id:session!.user.id,recipient_email:recipient.trim().toLowerCase(),enabled:true});setRecipient('');await refreshFamily();setMessage('Permission saved. Ask your family member to open their shared inbox.');})}}>
+    <form className="service-form" onSubmit={e=>{e.preventDefault();void run(async()=>{await db('medpro_family?on_conflict=owner_id,recipient_email','POST',{owner_id:session!.user.id,recipient_email:recipient.trim().toLowerCase(),enabled:true});setRecipient('');await refreshFamily();setMessage('Permission saved. Ask your family member to open their shared inbox.');})}}>
      <label>{t("Family member’s email")}<input type="email" required value={recipient} onChange={e=>setRecipient(e.target.value)} placeholder={t("family@example.com")}/></label><button disabled={!session||busy}>{t("Grant access")}</button>
     </form>
     <button className="secondary" disabled={!session||busy} onClick={()=>void run(refreshFamily)}>{t("Refresh permissions & inbox")}</button>
-    {session&&grants.filter(g=>g.owner_id===session.user.id).map(g=><div className="service-grant" key={g.id}><span><Mail size={15}/> {g.recipient_email} · {t(g.enabled?'Enabled':'Revoked')}</span><button className="secondary" disabled={busy} onClick={()=>void run(async()=>{await db(`carely_family?id=eq.${g.id}`,'PATCH',{enabled:!g.enabled});await refreshFamily();})}>{t(g.enabled?'Revoke':'Re-enable')}</button></div>)}
-    <form className="service-form" onSubmit={e=>{e.preventDefault();void run(async()=>{await db('carely_notifications','POST',{owner_id:session!.user.id,body:noteText.trim()});setNoteText('');await refreshFamily();setMessage('Message added to your family’s in-app inbox.');})}}>
+    {session&&grants.filter(g=>g.owner_id===session.user.id).map(g=><div className="service-grant" key={g.id}><span><Mail size={15}/> {g.recipient_email} · {t(g.enabled?'Enabled':'Revoked')}</span><button className="secondary" disabled={busy} onClick={()=>void run(async()=>{await db(`medpro_family?id=eq.${g.id}`,'PATCH',{enabled:!g.enabled});await refreshFamily();})}>{t(g.enabled?'Revoke':'Re-enable')}</button></div>)}
+    <form className="service-form" onSubmit={e=>{e.preventDefault();void run(async()=>{await db('medpro_notifications','POST',{owner_id:session!.user.id,body:noteText.trim()});setNoteText('');await refreshFamily();setMessage('Message added to your family’s in-app inbox.');})}}>
      <label>{t("Message for people with permission")}<textarea rows={3} required maxLength={2000} value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder={t("Write a short update…")}/></label><button disabled={!session||busy||!noteText.trim()}>{t("Share in inbox")}</button>
     </form>
     <h3>{t("Shared inbox")}</h3>{notes.length===0?<p className="service-muted">{t("No messages loaded yet. Sign in and refresh to check your inbox.")}</p>:notes.map(n=><blockquote className="service-note" key={n.id}>{n.body}<small>{new Date(n.created_at).toLocaleString('en-IN')}</small></blockquote>)}
@@ -147,3 +147,4 @@ export default function Services({mode,items,onRestore}:{mode:ServiceMode;items:
   <p className="service-disclaimer">{t("Accounts, AI and barcode-to-product lookup need owner-provided credentials. The camera, manual entries and available medicine-name searches can work without them. This is not a medicine-authentication or treatment service.")}</p>
  </section>;
 }
+

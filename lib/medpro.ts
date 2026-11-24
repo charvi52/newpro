@@ -1,12 +1,26 @@
-/** User-entered pack details are never treated as verified product data. */
+﻿/** User-entered pack details are never treated as verified product data. */
 export type Medicine = {product:string;manufacturer:string;strength:string;form:string;release:string;batch:string;origin?:'manual';demo?:boolean;owner?:string;expiry?:string;notes?:string;photo?:string};
 export const fields=['product','manufacturer','strength','form','release','batch'] as const;
 export const norm=(v:string)=>v.trim().replace(/\s+/g,' ').toLowerCase();
 export const ownerKey=(m:Medicine)=>norm(m.owner||'Me')||'me';
 export const key=(m:Medicine)=>JSON.stringify([...fields.map(f=>norm(m[f])),ownerKey(m)]);
 export const initial:Medicine[]=[];
-export const STORAGE_KEY='carely:cabinet:v2';
-export const LEGACY_STORAGE_KEY='carely:demo:v1';
+export const STORAGE_KEY='medpro:cabinet:v2';
+export const LEGACY_STORAGE_KEY='medpro:demo:v1';
+/* Migration: read packs saved under the previous carely:* keys so returning users
+   don't lose their cabinet when the storage key namespace changes. */
+const OLD_CABINET='carely:cabinet:v2';
+const OLD_DEMO='carely:demo:v1';
+export function migrateLegacyStorage(storage:Storage):void{
+  try{
+    if(!storage.getItem(STORAGE_KEY)&&storage.getItem(OLD_CABINET)){
+      storage.setItem(STORAGE_KEY,storage.getItem(OLD_CABINET)!);
+    }
+    if(!storage.getItem(LEGACY_STORAGE_KEY)&&storage.getItem(OLD_DEMO)){
+      storage.setItem(LEGACY_STORAGE_KEY,storage.getItem(OLD_DEMO)!);
+    }
+  }catch{}
+}
 export const add=(items:Medicine[],m:Medicine)=>items.some(x=>key(x)===key(m))?items:[...items,m];
 export function validateMedicine(m:Medicine){
  if(!m||typeof m.product!=='string'||!m.product.trim())return 'Enter the medicine name. Other pack details can be added later.';
@@ -35,3 +49,4 @@ export function mergeCabinets(local:Medicine[],remote:Medicine[]){
   items[i]={...m,...current,expiry:current.expiry||m.expiry||'',notes:current.notes||m.notes||''};
  }}return {items,conflicts};
 }
+

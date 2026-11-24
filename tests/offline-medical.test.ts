@@ -1,8 +1,8 @@
-import test from 'node:test';
+﻿import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {sampleCabinet,batchStatus,formulationFor,formulations,hindiTranscript,localHindiVoice,savings,isSimulatedMatch} from '../lib/offline-medical';
-import {restore,validateMedicine,type Medicine} from '../lib/carely';
+import {restore,validateMedicine,type Medicine} from '../lib/medpro';
 import type {AlertSnapshot} from '../lib/quality-alerts';
 const snapshot=JSON.parse(fs.readFileSync('data/cdsco-alerts.json','utf8')) as AlertSnapshot;
 test('demo simulation targets only the fictional Dad Pantofix DEMO-892 entry',()=>{
@@ -51,11 +51,12 @@ test('offline speech selects local Hindi only and simulation transcript never cl
  assert.match(panel,/ILLUSTRATIVE DEMO PRICES/);assert.match(panel,/NOT AN OFFICIAL CDSCO ALERT/);
 });
 test('offline shell cache excludes API routes and cross-origin data',()=>{
- const sw=fs.readFileSync('public/carely-offline-sw.js','utf8');
+ const sw=fs.readFileSync('public/medpro-offline-sw.js','utf8');
  assert.match(sw,/url\.pathname\.startsWith\('\/api\/'\)/);
  assert.match(sw,/url\.origin!==self\.location\.origin/);
  assert.match(sw,/credentials:'omit'/);
  const page=fs.readFileSync('app/page.tsx','utf8');
  assert.match(page,/loaded&&demoItems===null&&view/);
- assert.match(page,/sessionStorage.getItem\('carely:offline-demo'\)/);
+ assert.match(page,/sessionStorage.getItem\('medpro:offline-demo'\)/);
 });
+

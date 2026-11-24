@@ -1,5 +1,5 @@
-import { findMedicineAlternative, formulationFor } from './offline-medical';
-import type { Medicine } from './carely';
+﻿import { findMedicineAlternative, formulationFor } from './offline-medical';
+import type { Medicine } from './medpro';
 
 export interface SaltOverlapPack {
   product: string;
@@ -85,3 +85,4 @@ export function checkSaltOverlap(medicines: Medicine[]): SaltOverlapGroup[] {
     .filter(([, packs]) => packs.length >= 2)
     .map(([salt, packs]) => ({ salt, packs }));
 }
+

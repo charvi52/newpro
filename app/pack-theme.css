@@ -1,4 +1,4 @@
-:root, :root[data-theme="light"] {
+﻿:root, :root[data-theme="light"] {
   --theme-bg: #f8f6f2;
   --theme-surface: #edf0e8;
   --theme-raised: #fffdf9;
@@ -243,7 +243,7 @@
 .editorial-home :is(.scene-copy > p:not(.sky-eyebrow), .companion-section > p:not(.sky-eyebrow), .e-statement h2 .e-reading-word) { color: var(--theme-muted); }
 .redesigned .e-final > .e-wrap > .e-primary { background: var(--theme-primary); }
 
-.carely-phone .phone-camera {
+.medpro-phone .phone-camera {
   translate: none;
   transform: translateX(-50%);
 }
@@ -322,3 +322,4 @@
   .pack-shortcuts button svg { width: 20px; }
   .companion-section .companion-world { grid-template-columns: minmax(0, 1fr); }
 }
+
