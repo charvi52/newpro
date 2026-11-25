@@ -593,6 +593,18 @@ export interface ResolveOptions {
    * resolve without a Gemini key or free-tier quota.
    */
   catalogueFirst?: boolean;
+  /**
+   * Specific Gemini key to use for this call. When omitted, the single
+   * GEMINI_API_KEY env var is used. Used by the resolve route for key rotation.
+   */
+  apiKey?: string;
+  /**
+   * When true, a Gemini key failure returns null immediately instead of
+   * falling back to the curated database. The resolve route uses this while
+   * rotating keys so a dead key is skipped quickly; the final key attempt
+   * allows the curated fallback.
+   */
+  skipCuratedFallback?: boolean;
 }
 
 type PopularMedicine = (typeof POPULAR_INDIAN_MEDICINES)[number];
@@ -773,7 +785,7 @@ export async function resolveMedicine(query: string, context?: ResolveContext, o
   }
 
   // 1. Google Gemini AI: Direct live internet search for any medicine worldwide
-  const geminiKey = process.env.GEMINI_API_KEY;
+  const geminiKey = options?.apiKey ?? process.env.GEMINI_API_KEY;
   if (geminiKey) {
     try {
       const geminiPrompt = `You are an expert Indian clinical pharmacist.
@@ -882,6 +894,13 @@ Return ONLY a valid JSON object matching:
         }
       }
 
+      // During key rotation, a dead key should return null immediately so the
+      // route can try the next key instead of falling back to curated data.
+      if (geminiRes === null && options?.skipCuratedFallback) {
+        if (context) context.providerFailed = true;
+        return null;
+      }
+
       if (geminiRes && geminiRes.ok) {
         const json = (await geminiRes.json()) as {
           candidates?: Array<{
@@ -954,8 +973,9 @@ Return ONLY a valid JSON object matching:
         }
       }
     } catch (err) {
-      console.error('[Gemini Live Error, fallback to curated DB]', err);
+      console.error('[Gemini Live Error]', err instanceof Error ? err.message : err);
       if (context) context.providerFailed = true;
+      if (options?.skipCuratedFallback) return null;
     }
   }
 

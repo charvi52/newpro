@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { resolveMedicine, type ResolveContext } from '@/lib/medicine-resolver';
+import { resolveMedicine, type ResolveContext, type ResolvedMedicine } from '@/lib/medicine-resolver';
+import { listGeminiKeys } from '@/lib/gemini-keys';
 import { loadOfflineSnapshot, batchStatus } from '@/lib/offline-medical';
 
 export const runtime = 'nodejs';
@@ -80,12 +81,28 @@ async function resolveWithAlerts(q: string, batch: string): Promise<{ body: Reco
 
     // 1. Resolve medicine, generic alternative, and prices. The keyless public
     // catalogue is tried before any live AI provider, so arbitrary medicine
-    // names resolve without GEMINI_API_KEY or free-tier quota.
-    const providerState: ResolveContext = {};
-    const resolved = await resolveMedicine(q, providerState, { catalogueFirst: true });
+    // names resolve without GEMINI_API_KEY or free-tier quota. If multiple
+    // Gemini keys are configured, they are tried in order so a rate-limited or
+    // dead key is skipped automatically.
+    const keys = listGeminiKeys();
+    let resolved: ResolvedMedicine | null = null;
+    let providerFailed = false;
+
+    for (let i = 0; i < keys.length; i++) {
+      const isLastKey = i === keys.length - 1;
+      const providerState: ResolveContext = {};
+      resolved = await resolveMedicine(q, providerState, {
+        catalogueFirst: true,
+        apiKey: keys[i],
+        skipCuratedFallback: !isLastKey,
+      });
+      if (resolved) break;
+      if (!providerState.providerFailed) break; // medicine genuinely not found
+      providerFailed = true;
+    }
 
     if (!resolved) {
-      if (providerState.providerFailed) {
+      if (providerFailed) {
         // A provider/catalogue outage is not evidence about the medicine. Report
         // it honestly and pin it only for a short window, so a refresh loop
         // cannot burn the remaining free-tier quota on the same query.
